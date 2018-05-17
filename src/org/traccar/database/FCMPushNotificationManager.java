@@ -20,7 +20,9 @@ import java.sql.SQLException;
 
 import java.text.DecimalFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,13 +76,13 @@ public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNot
         return Optional.empty();
     }
 
-    public void updateGenericEvents(Map<Event, Position> events) {
-        for (Map.Entry<Event, Position> event : events.entrySet()) {
-            updateGenericEvent(event.getKey(), event.getValue());
+    public void updateGenericEvents(Map<Event, Position> events, int ttl) {
+        for (Entry<Event, Position> event : events.entrySet()) {
+            updateGenericEvent(event.getKey(), ttl);
         }
     }
 
-    public void updateGenericEvent(Event event, Position position) {
+    public void updateGenericEvent(Event event, int ttl) {
         String eventType = event.getType();
 
         if (StringUtils.isBlank(eventType)) {
@@ -96,13 +98,13 @@ public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNot
 
         Device device = Context.getDeviceManager().getById(deviceId);
         String title = String.format("%s (%s)", device.getName(), device.getRegistrationNumber());
-        String body = String.format("[%s]: Vehicle %s", event.getServerTime().toString(),
+        String body = String.format("[%s]: Vehicle %s", getDateTimeStringInTimezone(event.getServerTime()),
                 FCMPushNotificationTypeManager.getFcmPushNotificationTypeToStringMap().get(eventType));
 
-        PushNotifications.getInstance().sendEventNotification(tokens, title, body);
+        PushNotifications.getInstance().sendEventNotification(tokens, title, body, ttl);
     }
 
-    public void updateFuelActivity(FuelActivity fuelActivity) {
+    public void updateFuelActivity(FuelActivity fuelActivity, int ttl) {
 
         FuelActivityType eventType = fuelActivity.getActivityType();
         if (eventType == FuelActivityType.NONE) {
@@ -120,17 +122,22 @@ public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNot
         String title = String.format("[%s] detected on vehicle %s", eventType, device.getRegistrationNumber());
 
         DecimalFormat formatFuelLevel = new DecimalFormat(".#");
-        DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("dd-MM-yyyy HH:mm:ss")
-                                                            .withZone(DateTimeZone.forID("Asia/Kolkata"));
 
         String volumeChanged = formatFuelLevel.format(fuelActivity.getChangeVolume());
-        String startTime = dateTimeFormatter.print(new DateTime(fuelActivity.getActivityStartTime()));
-        String endTime = dateTimeFormatter.print(new DateTime(fuelActivity.getActivityEndTime()));
+        String startTime = getDateTimeStringInTimezone(fuelActivity.getActivityStartTime());
+        String endTime = getDateTimeStringInTimezone(fuelActivity.getActivityEndTime());
 
         String messageBody = String.format("Volume: %s, %n", volumeChanged)
                              + String.format("Time range: %s - %s", startTime, endTime);
 
-        PushNotifications.getInstance().sendEventNotification(tokens, title, messageBody);
+        PushNotifications.getInstance().sendEventNotification(tokens, title, messageBody, ttl);
+    }
+
+    private String getDateTimeStringInTimezone(Date date) {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("dd-MM-yyyy HH:mm:ss")
+                                                            .withZone(DateTimeZone.forID("Asia/Kolkata"));
+
+        return dateTimeFormatter.print(new DateTime(date));
     }
 
     private ConcurrentHashSet<String> getEffectiveFCMTokens(String eventType, long deviceId) {
@@ -139,7 +146,7 @@ public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNot
         ConcurrentHashSet<String> tokens = new ConcurrentHashSet<>();
         Set<Long> userIds = Context.getPermissionsManager().getDeviceUsers(deviceId);
 
-        Log.info("FCM Push notification users list: " + userIds.size());
+        Log.debug("FCM Push notification users list: " + userIds.size());
         for (long userId : userIds) {
             Optional<Set<Long>> fcmNotificationsForUser = getFCMDeviceNotificationForUser(deviceId, userId);
             if (fcmNotificationsForUser.isPresent()) {
