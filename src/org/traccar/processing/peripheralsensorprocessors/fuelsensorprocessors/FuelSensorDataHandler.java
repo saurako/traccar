@@ -282,8 +282,9 @@ public class FuelSensorDataHandler extends BaseDataHandler {
 
         TreeMultiset<Position> positionsForDeviceSensor = previousPositions.get(deviceId).get(sensorId);
 
-        if (position.getAttributes().containsKey(Position.KEY_FUEL_LEVEL)) {
-            // This is a position from the DB, add to the list and move on
+        if (loadingOldDataFromDB || position.getAttributes().containsKey(Position.KEY_CALIBRATED_RAW_FUEL_LEVEL)) {
+            // This is a position from the DB, add to the list and move on.
+            // If we don't skip further processing, it might trigger FCM notification unnecessarily.
             positionsForDeviceSensor.add(position);
             removeFirstPositionIfNecessary(positionsForDeviceSensor);
             return;
@@ -293,12 +294,17 @@ public class FuelSensorDataHandler extends BaseDataHandler {
                 getCalibratedFuelLevel(deviceId, sensorId, fuelLevelPoints);
 
         if (!maybeCalibratedFuelLevel.isPresent()) {
-            // We don't have calibration data for sensor.
+            // We don't have calibration data for sensor. We will try to load it up again, to handle a device
+            // that was added newly. But we will not process this position because we have to check again if the calib
+            // is there or not and that can go into a loop. We'll check back the next time we get an update position
+            // from this device.
+            Log.debug("Calibration data not found for sensor, refreshing calib list from db" + sensorId);
+            Context.getPeripheralSensorManager().refreshPeripheralSensorsMap();
             return;
         }
 
         double calibratedFuelLevel = maybeCalibratedFuelLevel.get();
-        position.set(Position.KEY_FUEL_LEVEL, calibratedFuelLevel);
+        position.set(Position.KEY_CALIBRATED_RAW_FUEL_LEVEL, calibratedFuelLevel);
 
         List<Position> relevantPositionsListForAverages =
                 getRelevantPositionsSubList(positionsForDeviceSensor,
@@ -306,6 +312,8 @@ public class FuelSensorDataHandler extends BaseDataHandler {
                                             minValuesForMovingAvg);
 
         double currentFuelLevelAverage = getAverageValue(position, relevantPositionsListForAverages);
+
+        // KEY_FUEL_LEVEL will hold the smoothed data, which is average of raw values in the relevant list.
         position.set(Position.KEY_FUEL_LEVEL, currentFuelLevelAverage);
         positionsForDeviceSensor.add(position);
 
@@ -358,10 +366,10 @@ public class FuelSensorDataHandler extends BaseDataHandler {
 
         // Omit values that are 0s, to avoid skewing the average. This is mostly useful in handling 0s from the
         // analog sensor, which are noise.
-        Double total = (Double) currentPosition.getAttributes().get(Position.KEY_FUEL_LEVEL);
+        Double total = (Double) currentPosition.getAttributes().get(Position.KEY_CALIBRATED_RAW_FUEL_LEVEL);
         double size = total > 0.0 ? 1.0 : 0.0;
         for (Position position : fuelLevelReadings) {
-            double level = (Double) position.getAttributes().get(Position.KEY_FUEL_LEVEL);
+            double level = (Double) position.getAttributes().get(Position.KEY_CALIBRATED_RAW_FUEL_LEVEL);
             if (level > 0.0 && !Double.isNaN(level)) {
                 total += level;
                 size += 1.0;
