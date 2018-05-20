@@ -22,9 +22,6 @@ import org.traccar.model.Position;
 
 public abstract class BaseEventHandler extends BaseDataHandler {
 
-    private final int GENERIC_EVENT_TTL =
-            Context.getConfig().getInteger("fcm.event.generic.ttl");
-
     @Override
     protected Position handlePosition(Position position) {
 
@@ -35,7 +32,7 @@ public abstract class BaseEventHandler extends BaseDataHandler {
             }
 
             if (Context.getFcmPushNotificationManager() != null) {
-                Context.getFcmPushNotificationManager().updateGenericEvents(events, GENERIC_EVENT_TTL);
+                Context.getFcmPushNotificationManager().updateGenericEvents(events);
             }
         }
 

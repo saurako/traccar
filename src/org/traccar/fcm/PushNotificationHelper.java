@@ -34,13 +34,14 @@ public final class PushNotificationHelper {
 
         String notificationJsonString = buildNotificationJsonString(deviceToken, title, body, ttl);
 
-        try (OutputStreamWriter writerStream = new OutputStreamWriter(conn.getOutputStream());
-             BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+        try {
+            Log.debug("Sending FCM notification: " + notificationJsonString);
 
+            OutputStreamWriter writerStream = new OutputStreamWriter(conn.getOutputStream());
             writerStream.write(notificationJsonString);
             writerStream.flush();
 
-
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             StringBuilder fcmResult = new StringBuilder();
             fcmResult.append("Result from FCM: ");
 

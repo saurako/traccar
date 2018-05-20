@@ -29,6 +29,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNotification> {
 
+    private static final int GENERIC_EVENT_TTL =
+            Context.getConfig().getInteger("fcm.event.generic.ttl");
+
+    private static final int FUEL_EVENT_TTL =
+            Context.getConfig().getInteger("fcm.event.fuel.ttl");
+
     private final Map<Long, Map<Long, Set<Long>>> fcmNotificationsMap = new ConcurrentHashMap<>();
 
     public FCMPushNotificationManager(DataManager dataManager) {
@@ -76,9 +82,9 @@ public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNot
         return Optional.empty();
     }
 
-    public void updateGenericEvents(Map<Event, Position> events, int ttl) {
+    public void updateGenericEvents(Map<Event, Position> events) {
         for (Entry<Event, Position> event : events.entrySet()) {
-            updateGenericEvent(event.getKey(), ttl);
+            updateGenericEvent(event.getKey(), GENERIC_EVENT_TTL);
         }
     }
 
@@ -104,7 +110,7 @@ public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNot
         PushNotifications.getInstance().sendEventNotification(tokens, title, body, ttl);
     }
 
-    public void updateFuelActivity(FuelActivity fuelActivity, int ttl) {
+    public void updateFuelActivity(FuelActivity fuelActivity) {
 
         FuelActivityType eventType = fuelActivity.getActivityType();
         if (eventType == FuelActivityType.NONE) {
@@ -130,7 +136,7 @@ public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNot
         String messageBody = String.format("Volume: %s, %n", volumeChanged)
                              + String.format("Time range: %s - %s", startTime, endTime);
 
-        PushNotifications.getInstance().sendEventNotification(tokens, title, messageBody, ttl);
+        PushNotifications.getInstance().sendEventNotification(tokens, title, messageBody, FUEL_EVENT_TTL);
     }
 
     private String getDateTimeStringInTimezone(Date date) {
