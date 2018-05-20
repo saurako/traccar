@@ -471,13 +471,6 @@ public class FuelSensorDataHandler extends BaseDataHandler {
         if (previousFuelLevelInfo == null) {
             Log.debug("Null previousFuelLevelInfo - deviceID: " + deviceId
                      + " sensorId: " + sensorId);
-
-            Log.debug("fuel calibration: ");
-            fuelSensorCalibration.ifPresent(fuelSensorCalibration1 -> fuelSensorCalibration1
-                    .getSensorPointsMap()
-                    .entrySet().forEach(e -> Log.debug(e.getKey() + " -> " + e.getValue())));
-
-
             return Optional.empty();
         }
 
@@ -494,7 +487,7 @@ public class FuelSensorDataHandler extends BaseDataHandler {
         } catch (Exception ex) {
             Log.debug("Null previousFuelLevelInfo - deviceID: " + deviceId
                      + " sensorId: " + sensorId
-                    + " reporte sensorFuelLevelPoints" + sensorFuelLevelPoints);
+                    + " reported sensorFuelLevelPoints" + sensorFuelLevelPoints);
 
             Log.debug("fuel calibration: ");
             fuelSensorCalibration.ifPresent(fuelSensorCalibration1 -> fuelSensorCalibration1
