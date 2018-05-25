@@ -176,7 +176,7 @@ public class FuelSensorDataHandler extends BaseDataHandler {
                                                  .firstEntry()
                                                  .getElement()
                                                  .getAttributes()
-                                                 .get(Position.KEY_CALIBRATED_FUEL_LEVEL);
+                                                 .get(Position.KEY_FUEL_LEVEL);
 
         position.set(Position.KEY_FUEL_LEVEL,
                      lastKnownFuelLevelPosition);
@@ -450,8 +450,8 @@ public class FuelSensorDataHandler extends BaseDataHandler {
         if (positionsSubset.size() <= minListSize) {
             Log.debug("[RELEVANT_SUBLIST] sublist is lesser than "
                       + minListSize + " returning " + positionsSubset.size());
-            return positionsForSensor.stream()
-                                     .collect(Collectors.toList());
+            return positionsSubset.stream()
+                                  .collect(Collectors.toList());
         }
 
         int listMaxIndex = positionsSubset.size() - 1;
