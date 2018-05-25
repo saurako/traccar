@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
 
 public class AquilaProtocolDecoder extends BaseProtocolDecoder {
 
+    public static final int EXTERNAL_BATTERY_DISCONNECT_EVENT_ID = 3;
+
     public AquilaProtocolDecoder(AquilaProtocol protocol) {
         super(protocol);
     }
@@ -147,7 +149,11 @@ public class AquilaProtocolDecoder extends BaseProtocolDecoder {
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
 
-        position.set(Position.KEY_EVENT, parser.nextInt(0));
+        int event = parser.nextInt(0);
+        position.set(Position.KEY_EVENT, event);
+        if (event == EXTERNAL_BATTERY_DISCONNECT_EVENT_ID) {
+            position.set(Position.KEY_EXTERNAL_BATTERY_DISCONNECT, true);
+        }
 
         position.setLatitude(parser.nextDouble(0));
         position.setLongitude(parser.nextDouble(0));

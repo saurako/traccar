@@ -21,6 +21,9 @@ public class AquilaAEventsHandler extends BaseEventHandler {
         positionInfoToEventTypeMap.put(Position.KEY_INTERNAL_BATTERY_LOW, Event.TYPE_INTERNAL_BATTERY_LOW);
         positionInfoToEventTypeMap.put(Position.KEY_OVERSPEED_START, Event.TYPE_OVERSPEED_START);
         positionInfoToEventTypeMap.put(Position.KEY_OVERSPEED_END, Event.TYPE_OVERSPEED_END);
+
+        positionInfoToEventTypeMap.put(Position.KEY_EXTERNAL_BATTERY_DISCONNECT,
+                                       Event.TYPE_EXTERNAL_BATTERY_DISCONNECT);
     }
 
     @Override

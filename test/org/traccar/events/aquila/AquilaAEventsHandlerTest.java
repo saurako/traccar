@@ -20,9 +20,10 @@ public class AquilaAEventsHandlerTest {
         Position position = new Position();
 
         position.set(Position.KEY_CASE_OPEN, true);
+        position.set(Position.KEY_EXTERNAL_BATTERY_DISCONNECT, true);
         position.setValid(true);
         Map<Event, Position> events = aquilaAEventsHandler.analyzePosition(position);
 
-        assertEquals(1, events.size());
+        assertEquals(2, events.size());
     }
 }

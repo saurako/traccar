@@ -141,6 +141,7 @@ public class Position extends Message {
     public static final String KEY_INTERNAL_BATTERY_LOW = "internalBatteryLow";
     public static final String KEY_HARD_ACCELERATION = "hardAccelDetect";
     public static final String KEY_HARD_BRAKING = "hardBrakeDetect";
+    public static final String KEY_EXTERNAL_BATTERY_DISCONNECT = "extBatteryCut";
 
     public Position() {
     }

@@ -70,6 +70,7 @@ public class Event extends Message {
     public static final String TYPE_INTERNAL_BATTERY_LOW = "internalBatteryLow";
     public static final String TYPE_HARD_ACCELERATION = "hardAcceleration";
     public static final String TYPE_HARD_BRAKING = "hardBraking";
+    public static final String TYPE_EXTERNAL_BATTERY_DISCONNECT = "extBatteryCut";
 
     private Date serverTime;
 
