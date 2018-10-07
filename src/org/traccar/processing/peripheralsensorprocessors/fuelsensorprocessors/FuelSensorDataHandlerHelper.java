@@ -36,6 +36,8 @@ public class FuelSensorDataHandlerHelper {
         SensorPointsMap lastFuelLevelInfo = sensorPointsToVolumeMap.ceilingEntry(lastFuelLevelKey).getValue();
         long maxFuelInTank = lastFuelLevelInfo.getFuelLevel();
         double allowedDeviation = (double) maxFuelInTank * 0.01;
+        Log.debug("Full tank capacity - " + maxFuelInTank + " Allowed dev - " + allowedDeviation);
+
 
         // Make a copy so we don't affect the original incoming list esp in the sort below,
         // since the order of the incoming list needs to be preserved to remove / mark the right

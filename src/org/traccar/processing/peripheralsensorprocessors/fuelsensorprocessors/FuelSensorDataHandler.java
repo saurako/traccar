@@ -394,6 +394,7 @@ public class FuelSensorDataHandler extends BaseDataHandler {
         Position lastPacketProcessed = getLastPosition(position.getDeviceId());
         if (lastPacketProcessed  != null
                 && position.getDeviceTime().compareTo((lastPacketProcessed.getDeviceTime())) <= 0) {
+            Log.debug("Backdated packets");
             return;
         }
 
@@ -486,6 +487,7 @@ public class FuelSensorDataHandler extends BaseDataHandler {
             SensorPointsMap lastFuelLevelInfo = sensorPointsToVolumeMap.ceilingEntry(lastFuelLevelKey).getValue();
             long maxFuelInTank = lastFuelLevelInfo.getFuelLevel();
             double allowedDeviation = (double) maxFuelInTank * 0.01;
+            Log.debug("Full tank capacity - " + maxFuelInTank + " Allowed dev - " + allowedDeviation);
 
             if (Math.abs(calculatedFuelChangeVolume) > allowedDeviation) {
                 if (calculatedFuelChangeVolume < 0) {
