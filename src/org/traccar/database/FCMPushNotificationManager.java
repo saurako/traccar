@@ -104,7 +104,7 @@ public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNot
 
         Device device = Context.getDeviceManager().getById(deviceId);
         String title = String.format("%s (%s)", device.getName(), device.getRegistrationNumber());
-        String body = String.format("[%s]: Vehicle %s", getDateTimeStringInTimezone(event.getServerTime()),
+        String body = String.format("[%s]: Vehicle %s", getDateTimeStringInTimezone((long) event.getAttributes().get("startTime")),
                 FCMPushNotificationTypeManager.getFcmPushNotificationTypeToStringMap().get(eventType));
 
         PushNotifications.getInstance().sendEventNotification(tokens, title, body, ttl);
@@ -143,6 +143,13 @@ public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNot
         DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("dd-MM-yyyy HH:mm:ss")
                                                             .withZone(DateTimeZone.forID("Asia/Kolkata"));
 
+        return dateTimeFormatter.print(new DateTime(date));
+    }
+
+    private String getDateTimeStringInTimezone(Long dateInMilliseconds) {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("dd-MM-yyyy HH:mm:ss")
+                .withZone(DateTimeZone.forID("Asia/Kolkata"));
+        Date date = new Date(dateInMilliseconds);
         return dateTimeFormatter.print(new DateTime(date));
     }
 

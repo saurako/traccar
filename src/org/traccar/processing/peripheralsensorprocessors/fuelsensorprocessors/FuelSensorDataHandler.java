@@ -171,7 +171,7 @@ public class FuelSensorDataHandler extends BaseDataHandler {
             || ((int) lastKnownAttributes.get(Position.KEY_ODOMETER) >
                     (int) currentAttributes.get(Position.KEY_ODOMETER))
             || ((double) lastKnownAttributes.get(Position.KEY_TOTAL_DISTANCE) >
-                    (double) lastKnownAttributes.get(Position.KEY_TOTAL_DISTANCE))) {
+                    (double) currentAttributes.get(Position.KEY_TOTAL_DISTANCE))) {
 
             return;
         }
@@ -390,6 +390,13 @@ public class FuelSensorDataHandler extends BaseDataHandler {
             return;
         }
 
+        //if this is a back dated packet, do nothing
+        Position lastPacketProcessed = getLastPosition(position.getDeviceId());
+        if (lastPacketProcessed  != null
+                && position.getDeviceTime().compareTo((lastPacketProcessed.getDeviceTime())) <= 0) {
+            return;
+        }
+
         Optional<Double> maybeCalibratedFuelLevel =
                 getCalibratedFuelLevel(deviceId, sensorId, fuelLevelPoints);
 
@@ -459,10 +466,28 @@ public class FuelSensorDataHandler extends BaseDataHandler {
             Log.debug("Expfuel-" + expectedCurrentFuelConsumed + " MaxFuel-" + expectedMaxFuelConsumed
                     + " Minfuel-" + expectedMinFuelConsumed + " maxdist-" + maximumDistanceTravelled
                     + " fuelchange-" + calculatedFuelChangeVolume);
-            //here we process if calculated fuel volume is bigger than certain number,
+            //here we process if calculated fuel volume is bigger than 1% of the full tank volume,
             // in order to omit notifications due to fluctuation in reading from sensor in a still vehicle
-            //currently hardcoded to 2. Should be like 1% of the tank volume may be as that is the allowed error
-            if (Math.abs(calculatedFuelChangeVolume) > 2) {
+
+
+            Optional<FuelSensorCalibration> fuelSensorCalibration =
+                    Context.getPeripheralSensorManager().
+                            getDeviceSensorCalibrationData(deviceId, sensorId);
+
+            //if (!fuelSensorCalibration.isPresent()) {
+            //  return Optional.empty();
+            //}
+
+            // Make a B-tree map of the points to fuel level map
+            TreeMap<Long, SensorPointsMap> sensorPointsToVolumeMap =
+                    new TreeMap<>(fuelSensorCalibration.get().getSensorPointsMap());
+
+            long lastFuelLevelKey = sensorPointsToVolumeMap.lastKey();
+            SensorPointsMap lastFuelLevelInfo = sensorPointsToVolumeMap.ceilingEntry(lastFuelLevelKey).getValue();
+            long maxFuelInTank = lastFuelLevelInfo.getFuelLevel();
+            double allowedDeviation = (double) maxFuelInTank * 0.01;
+
+            if (Math.abs(calculatedFuelChangeVolume) > allowedDeviation) {
                 if (calculatedFuelChangeVolume < 0) {
                     if (Math.abs(calculatedFuelChangeVolume) <= expectedMaxFuelConsumed
                             && Math.abs(calculatedFuelChangeVolume) >= expectedMinFuelConsumed) {
@@ -490,7 +515,7 @@ public class FuelSensorDataHandler extends BaseDataHandler {
         int indexOfPositionEvaluation = (minValuesForOutlierDetection - 1) / 2;
         boolean outlierPresent = FuelSensorDataHandlerHelper.isOutlierPresentInSublist(
                 relevantPositionsListForOutliers,
-                indexOfPositionEvaluation);
+                indexOfPositionEvaluation, deviceId, sensorId);
 
         if (outlierPresent) {
             // Remove the outlier

@@ -1,11 +1,12 @@
 package org.traccar.processing.peripheralsensorprocessors.fuelsensorprocessors;
 
+import org.traccar.Context;
 import org.traccar.helper.Log;
 import org.traccar.model.Position;
+import org.traccar.transforms.model.FuelSensorCalibration;
+import org.traccar.transforms.model.SensorPointsMap;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by saurako on 8/11/18.
@@ -15,7 +16,26 @@ public class FuelSensorDataHandlerHelper {
     public static final double TWO_MULTIPLIER = 2.0;
 
     public static boolean isOutlierPresentInSublist(List<Position> rawFuelOutlierSublist,
-                                                    int indexOfPositionEvaluated) {
+                                                    int indexOfPositionEvaluated, long deviceId, int sensorId) {
+
+
+
+        Optional<FuelSensorCalibration> fuelSensorCalibration =
+                Context.getPeripheralSensorManager().
+                        getDeviceSensorCalibrationData(deviceId, sensorId);
+
+        //if (!fuelSensorCalibration.isPresent()) {
+          //  return Optional.empty();
+        //}
+
+        // Make a B-tree map of the points to fuel level map
+        TreeMap<Long, SensorPointsMap> sensorPointsToVolumeMap =
+                new TreeMap<>(fuelSensorCalibration.get().getSensorPointsMap());
+
+        long lastFuelLevelKey = sensorPointsToVolumeMap.lastKey();
+        SensorPointsMap lastFuelLevelInfo = sensorPointsToVolumeMap.ceilingEntry(lastFuelLevelKey).getValue();
+        long maxFuelInTank = lastFuelLevelInfo.getFuelLevel();
+        double allowedDeviation = (double) maxFuelInTank * 0.01;
 
         // Make a copy so we don't affect the original incoming list esp in the sort below,
         // since the order of the incoming list needs to be preserved to remove / mark the right
@@ -64,6 +84,9 @@ public class FuelSensorDataHandlerHelper {
                                                                   .get(Position.KEY_CALIBRATED_FUEL_LEVEL);
 
         double standardDeviation = Math.sqrt(sumOfSquaredDifferenceOfMean / (double) listSize);
+        if ((allowedDeviation / 2) > standardDeviation) {
+            standardDeviation = allowedDeviation / 2;
+        }
 
         // 2 standard deviations away
         double lowerBoundOnRawFuelValue = medianRawFuelValue - (TWO_MULTIPLIER * standardDeviation);
