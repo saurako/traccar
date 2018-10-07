@@ -436,15 +436,19 @@ public class FuelSensorDataHandler extends BaseDataHandler {
             double startTotalGPSDistanceInMeters = last.getDouble(Position.KEY_TOTAL_DISTANCE);
             double endTotalGPSDistanceInMeters = position.getDouble(Position.KEY_TOTAL_DISTANCE);
 
-            int startOdometerInMeters = last.getInteger(Position.KEY_ODOMETER);
-            int endOdometerInMeters = position.getInteger(Position.KEY_ODOMETER);
+            int startOdometerInMeters = 0;
+            int endOdometerInMeters = 0;
+            if (last.getAttributes().containsKey(Position.KEY_ODOMETER)
+                    && position.getAttributes().containsKey(Position.KEY_ODOMETER)) {
+                startOdometerInMeters = last.getInteger(Position.KEY_ODOMETER);
+                endOdometerInMeters = position.getInteger(Position.KEY_ODOMETER);
+            }
 
             double calculatedFuelChangeVolume = position.getInteger(Position.KEY_FUEL_LEVEL)
                     - last.getInteger(Position.KEY_FUEL_LEVEL);
 
             double differenceTotalDistanceInMeters = endTotalGPSDistanceInMeters - startTotalGPSDistanceInMeters;
             double differenceOdometerInMeters = endOdometerInMeters - startOdometerInMeters;
-
             double maximumDistanceTravelled = Math.max(differenceTotalDistanceInMeters, differenceOdometerInMeters) / 1000;
             double minimumAverageMileage = 1.5; // This has to be a self learning value
             double maximumAverageMileage = 4.0; // This has to be a self learning value
@@ -455,21 +459,26 @@ public class FuelSensorDataHandler extends BaseDataHandler {
             Log.debug("Expfuel-" + expectedCurrentFuelConsumed + " MaxFuel-" + expectedMaxFuelConsumed
                     + " Minfuel-" + expectedMinFuelConsumed + " maxdist-" + maximumDistanceTravelled
                     + " fuelchange-" + calculatedFuelChangeVolume);
-            if (calculatedFuelChangeVolume < 0) {
-                if(Math.abs(calculatedFuelChangeVolume) <= expectedMaxFuelConsumed
-                        && Math.abs(calculatedFuelChangeVolume) >= expectedMinFuelConsumed) {
-                    Log.debug(String.format("Data Loss: Distance covered %f, Exp fuel consumed: %f, actual fuel consumed: %f",
-                            maximumDistanceTravelled, expectedCurrentFuelConsumed, calculatedFuelChangeVolume));
-                } else if (Math.abs(calculatedFuelChangeVolume) > expectedMaxFuelConsumed){
-                    double possibleFuelDrain = Math.abs(calculatedFuelChangeVolume) - expectedCurrentFuelConsumed;
-                    //send notification for possibleFuelDrain;
+            //here we process if calculated fuel volume is bigger than certain number,
+            // in order to omit notifications due to fluctuation in reading from sensor in a still vehicle
+            //currently hardcoded to 2. Should be like 1% of the tank volume may be as that is the allowed error
+            if (Math.abs(calculatedFuelChangeVolume) > 2) {
+                if (calculatedFuelChangeVolume < 0) {
+                    if (Math.abs(calculatedFuelChangeVolume) <= expectedMaxFuelConsumed
+                            && Math.abs(calculatedFuelChangeVolume) >= expectedMinFuelConsumed) {
+                        Log.debug(String.format("Data Loss: Distance covered %f, Exp fuel consumed: %f, actual fuel consumed: %f",
+                                maximumDistanceTravelled, expectedCurrentFuelConsumed, calculatedFuelChangeVolume));
+                    } else if (Math.abs(calculatedFuelChangeVolume) > expectedMaxFuelConsumed) {
+                        double possibleFuelDrain = Math.abs(calculatedFuelChangeVolume) - expectedCurrentFuelConsumed;
+                        //send notification for possibleFuelDrain;
+                    } else {
+                        double possibleFuelFill = expectedCurrentFuelConsumed - Math.abs(calculatedFuelChangeVolume);
+                        //send notification for possibleFuelFill;
+                    }
                 } else {
-                    double possibleFuelFill = expectedCurrentFuelConsumed - Math.abs(calculatedFuelChangeVolume);
-                    //send notification for possibleFuelFill;
+                    double expectedFuelFill = calculatedFuelChangeVolume + expectedCurrentFuelConsumed;
+                    //send notification for expectedFuelFill;
                 }
-            } else {
-                double expectedFuelFill = calculatedFuelChangeVolume + expectedCurrentFuelConsumed;
-                //send notification for expectedFuelFill;
             }
         }
 

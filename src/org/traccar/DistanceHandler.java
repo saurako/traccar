@@ -73,7 +73,8 @@ public class DistanceHandler extends BaseDataHandler {
             //if data missing then check odometer readings
             double dataLossDuration = 1800;
             double durationBetweenPackets = (position.getDeviceTime().getTime() - last.getDeviceTime().getTime()) / 1000;
-            if (durationBetweenPackets >= dataLossDuration) {
+            if (durationBetweenPackets >= dataLossDuration && last.getAttributes().containsKey(Position.KEY_ODOMETER)
+                    && position.getAttributes().containsKey(Position.KEY_ODOMETER)) {
                 double differenceInOdometer = (double) ((Integer)position.getAttributes().get(Position.KEY_ODOMETER))
                         - (double) ((Integer)last.getAttributes().get(Position.KEY_ODOMETER));
                 if(differenceInOdometer > distance) {
