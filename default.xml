@@ -248,6 +248,10 @@
         SELECT * FROM events WHERE deviceId = :deviceId AND serverTime BETWEEN :from AND :to ORDER BY serverTime
     </entry>
 
+    <entry key='database.mostRecentFuelAlert'>
+        SELECT  * FROM events WHERE deviceId = :deviceId AND type LIKE '%fuel%' ORDER BY id DESC LIMIT 1;
+    </entry>
+
     <entry key='database.selectGeofencesAll'>
         SELECT * FROM geofences
     </entry>
