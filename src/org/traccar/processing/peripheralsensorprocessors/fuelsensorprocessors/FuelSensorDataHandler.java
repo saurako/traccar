@@ -437,7 +437,12 @@ public class FuelSensorDataHandler extends BaseDataHandler {
                                                                        fuelTankMaxVolume);
 
             if(fuelActivity.isPresent()) {
-                FuelEventNotifier.sendNotificationIfNecessary(deviceId, fuelActivity.get());
+                if (FalseEventChecker.pendingListSize(deviceId) > 0) {
+                    FalseEventChecker.addEventToPendingList(deviceId, fuelActivity.get());
+                } else {
+                    FalseEventChecker.addEventToPendingList(deviceId, fuelActivity.get());
+                    FalseEventChecker.falseAlertsBeyondWindow(position);
+                }
             }
             possibleDataLossByDevice.remove(deviceId);
             nonOutlierInLastWindowByDevice.remove(deviceId);
@@ -445,6 +450,10 @@ public class FuelSensorDataHandler extends BaseDataHandler {
 
 
         //-- End Outliers
+
+        if (FalseEventChecker.pendingListSize(deviceId) > 0){
+            FalseEventChecker.checkAndReportFalseAlerts(position);
+        }
 
         List<Position> relevantPositionsListForAlerts =
                 FuelSensorDataHandlerHelper.getRelevantPositionsSubList(

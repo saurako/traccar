@@ -9,7 +9,12 @@ import java.sql.SQLException;
 import static org.traccar.Context.getDataManager;
 
 public class FuelEventNotifier {
+
     public static void sendNotificationIfNecessary(final long deviceId, final FuelActivity fuelActivity) {
+        sendNotificationIfNecessary(deviceId, fuelActivity, false);
+    }
+
+    public static void sendNotificationIfNecessary(final long deviceId, final FuelActivity fuelActivity, boolean falsePositive) {
         if (fuelActivity.getActivityType() != FuelActivity.FuelActivityType.NONE) {
             Log.debug("[FUEL_ACTIVITY]  DETECTED: " + fuelActivity.getActivityType()
                               + " starting at: " + fuelActivity.getActivityStartTime()

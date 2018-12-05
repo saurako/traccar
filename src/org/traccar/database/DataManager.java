@@ -28,9 +28,11 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.management.Query;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
@@ -554,5 +556,17 @@ public class DataManager {
                            .setDate("deviceTime", position.getDeviceTime())
                            .executeQuery(Position.class);
 
+    }
+
+    public Optional<Event> getMostRecentFuelEvent(long deviceId) throws SQLException {
+        return QueryBuilder.create(dataSource, getQuery("database.mostRecentFuelAlert"))
+                           .setLong("deviceId", deviceId)
+                           .executeQuery(Event.class).stream().findFirst();
+    }
+
+    public Optional<Position> getPositionById(long positionId) throws SQLException {
+        return QueryBuilder.create(dataSource, getQuery("database.selectPosition"))
+                           .setLong("id", positionId)
+                           .executeQuery(Position.class).stream().findFirst();
     }
 }
