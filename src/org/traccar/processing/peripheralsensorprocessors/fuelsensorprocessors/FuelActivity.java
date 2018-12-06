@@ -21,6 +21,21 @@ public class FuelActivity {
         this.activityEndPosition = activityEndPosition;
     }
 
+    public FuelActivity(FuelActivityType activityType,
+                        double changeVolume,
+                        Position activityStartPosition,
+                        Position activityEndPosition,
+                        boolean isFalsePositive) {
+
+        this.activityType = activityType;
+        this.changeVolume = changeVolume;
+        this.activityStartTime = activityStartPosition.getDeviceTime();
+        this.activityEndTime = activityEndPosition.getDeviceTime();
+        this.activityStartPosition = activityStartPosition;
+        this.activityEndPosition = activityEndPosition;
+        this.isFalsePositive = isFalsePositive;
+    }
+
     public enum FuelActivityType {
         NONE,
         FUEL_FILL,
@@ -33,6 +48,7 @@ public class FuelActivity {
     private Date activityEndTime;
     private Position activityStartPosition;
     private Position activityEndPosition;
+    private boolean isFalsePositive = false;
 
     public FuelActivityType getActivityType() {
         return activityType;
@@ -80,5 +96,13 @@ public class FuelActivity {
 
     public void setActivityEndPosition(final Position activityEndPosition) {
         this.activityEndPosition = activityEndPosition;
+    }
+
+    public boolean isFalsePositive() {
+        return isFalsePositive;
+    }
+
+    public void setFalsePositive(boolean falsePositive) {
+        isFalsePositive = falsePositive;
     }
 }

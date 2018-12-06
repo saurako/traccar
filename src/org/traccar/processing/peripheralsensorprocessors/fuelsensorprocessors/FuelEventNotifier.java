@@ -15,6 +15,12 @@ public class FuelEventNotifier {
     }
 
     public static void sendNotificationIfNecessary(final long deviceId, final FuelActivity fuelActivity, boolean falsePositive) {
+
+        // This is done here instead of where this method is called to ensure that we don't break other places that
+        // call the overload of this method sendNotificationIfNecessary.
+
+        fuelActivity.setFalsePositive(falsePositive);
+
         if (fuelActivity.getActivityType() != FuelActivity.FuelActivityType.NONE) {
             Log.debug("[FUEL_ACTIVITY]  DETECTED: " + fuelActivity.getActivityType()
                               + " starting at: " + fuelActivity.getActivityStartTime()
@@ -23,7 +29,8 @@ public class FuelEventNotifier {
                               + " start lat, long " + fuelActivity.getActivityStartPosition().getLatitude()
                               + ", " + fuelActivity.getActivityStartPosition().getLongitude()
                               + " end lat, long " + fuelActivity.getActivityEndPosition().getLatitude()
-                              + ", " + fuelActivity.getActivityEndPosition().getLongitude());
+                              + ", " + fuelActivity.getActivityEndPosition().getLongitude()
+                              + ", falsePositive: " + falsePositive);
 
             // Add event to events table
             String eventType =
@@ -41,6 +48,7 @@ public class FuelEventNotifier {
             event.set("startLong", fuelActivity.getActivityStartPosition().getLongitude());
             event.set("endLat", fuelActivity.getActivityEndPosition().getLatitude());
             event.set("endLong", fuelActivity.getActivityEndPosition().getLongitude());
+            event.set("isFalsePositive", falsePositive);
 
             try {
                 getDataManager().addObject(event);

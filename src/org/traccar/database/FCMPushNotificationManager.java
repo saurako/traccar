@@ -132,6 +132,9 @@ public class FCMPushNotificationManager extends ExtendedObjectManager<FCMPushNot
 
         Device device = Context.getDeviceManager().getById(deviceId);
         String title = String.format("[%s] detected on vehicle %s", eventType, device.getRegistrationNumber());
+        if (fuelActivity.isFalsePositive()) {
+            title = " Possible " + title;
+        }
 
         DecimalFormat formatFuelLevel = new DecimalFormat(".#");
 

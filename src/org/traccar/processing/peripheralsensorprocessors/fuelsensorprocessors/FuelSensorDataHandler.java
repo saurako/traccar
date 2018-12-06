@@ -465,13 +465,22 @@ public class FuelSensorDataHandler extends BaseDataHandler {
 
         if (!this.loadingOldDataFromDB && relevantPositionsListForAlerts.size() >= maxValuesForAlerts) {
             // We'll use the smoothed values to check for activity.
-            FuelActivity fuelActivity =
+            Optional<FuelActivity> fuelActivity =
                     FuelDataActivityChecker.checkForActivity(relevantPositionsListForAlerts,
                                                              deviceFuelEventMetadata,
                                                              sensorId);
-
-            FuelEventNotifier.sendNotificationIfNecessary(deviceId, fuelActivity);
-        }
+                if(fuelActivity.isPresent()) {
+                    if (FalseEventChecker.pendingListSize(deviceId) > 0) {
+                        FalseEventChecker.addEventToPendingList(deviceId, fuelActivity.get());
+                    } else {
+                        FalseEventChecker.addEventToPendingList(deviceId, fuelActivity.get());
+                        FalseEventChecker.falseAlertsBeyondWindow(position);
+                    }
+                }
+            }
+            if (FalseEventChecker.pendingListSize(deviceId) > 0){
+                FalseEventChecker.checkAndReportFalseAlerts(position);
+            }
 
         removeFirstPositionIfNecessary(positionsForDeviceSensor, deviceId);
     }

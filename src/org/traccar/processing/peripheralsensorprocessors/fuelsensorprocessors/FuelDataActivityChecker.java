@@ -18,7 +18,7 @@ public class FuelDataActivityChecker {
                        .getDouble("processing.peripheralSensorData.fuelLevelChangeThresholdLiters");
     }
 
-    public static FuelActivity checkForActivity(List<Position> readingsForDevice,
+    public static Optional<FuelActivity> checkForActivity(List<Position> readingsForDevice,
                                                 Map<String, FuelEventMetadata> deviceFuelEventMetadata,
                                                 Long sensorId) {
 
@@ -176,7 +176,7 @@ public class FuelDataActivityChecker {
             }
         }
 
-        return fuelActivity;
+        return Optional.of(fuelActivity);
     }
 
     public static Optional<FuelActivity> checkForActivityIfDataLoss(final Position position,

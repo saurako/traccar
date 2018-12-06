@@ -31,7 +31,7 @@ public class FuelSensorDataHandlerTest {
         List<FuelActivity> activities = new LinkedList<>();
         for (int start = 0, end = 9; end < deviceBeforeFillPositions.size(); start++, end++) {
             List<Position> subListToPass = deviceBeforeFillPositions.subList(start, end);
-            activities.add(FuelDataActivityChecker.checkForActivity(subListToPass, fuelEventMetadataMap, sensorId));
+            activities.add(FuelDataActivityChecker.checkForActivity(subListToPass, fuelEventMetadataMap, sensorId).get());
         }
 
         int fuelFills = 0;
@@ -67,7 +67,7 @@ public class FuelSensorDataHandlerTest {
         for (int start = 0, end = 9; end < deviceBeforeDrainPositions.size(); start++, end++) {
             List<Position> subListToPass = deviceBeforeDrainPositions.subList(start, end);
             activities.add(FuelDataActivityChecker.checkForActivity(subListToPass, fuelEventMetadataMap,
-                                                                  sensorId));
+                                                                  sensorId).get());
         }
 
         int fuelDrains = 0;
