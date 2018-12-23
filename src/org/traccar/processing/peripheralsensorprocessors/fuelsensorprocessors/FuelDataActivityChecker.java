@@ -18,11 +18,12 @@ public class FuelDataActivityChecker {
                        .getDouble("processing.peripheralSensorData.fuelLevelChangeThresholdLiters");
     }
 
-    public static FuelActivity checkForActivity(List<Position> readingsForDevice,
+    public static Optional<FuelActivity> checkForActivity(List<Position> readingsForDevice,
                                                 Map<String, FuelEventMetadata> deviceFuelEventMetadata,
                                                 Long sensorId) {
 
         FuelActivity fuelActivity = new FuelActivity();
+        boolean flag = false;
 
         int midPoint = (readingsForDevice.size() - 1) / 2;
         double leftSum = 0, rightSum = 0;
@@ -159,6 +160,7 @@ public class FuelDataActivityChecker {
                 fuelActivity.setActivityStartPosition(fuelEventMetadata.getActivityStartPosition());
                 fuelActivity.setActivityEndPosition(fuelEventMetadata.getActivityEndPosition());
                 deviceFuelEventMetadata.remove(lookupKey);
+                flag = true;
             } else if (fuelChangeVolume > 0.0) {
                 fuelActivity.setActivityType(FuelActivity.FuelActivityType.FUEL_FILL);
                 fuelActivity.setChangeVolume(fuelChangeVolume);
@@ -167,6 +169,7 @@ public class FuelDataActivityChecker {
                 fuelActivity.setActivityStartPosition(fuelEventMetadata.getActivityStartPosition());
                 fuelActivity.setActivityEndPosition(fuelEventMetadata.getActivityEndPosition());
                 deviceFuelEventMetadata.remove(lookupKey);
+                flag = true;
             } else {
                 // The start may have been detected as a false positive. In any case, remove after we determine the kind
                 // of activity.
@@ -176,7 +179,12 @@ public class FuelDataActivityChecker {
             }
         }
 
-        return fuelActivity;
+        if (flag == true) {
+            return Optional.of(fuelActivity);           
+        } else {
+            return Optional.empty();
+        }
+
     }
 
     public static Optional<FuelActivity> checkForActivityIfDataLoss(final Position position,

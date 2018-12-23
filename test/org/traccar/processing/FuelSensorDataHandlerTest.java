@@ -28,20 +28,6 @@ public class FuelSensorDataHandlerTest {
 
         double threshold = 5.34;
 
-        List<FuelActivity> activities = new LinkedList<>();
-        for (int start = 0, end = 9; end < deviceBeforeFillPositions.size(); start++, end++) {
-            List<Position> subListToPass = deviceBeforeFillPositions.subList(start, end);
-            activities.add(FuelDataActivityChecker.checkForActivity(subListToPass, fuelEventMetadataMap, sensorId));
-        }
-
-        int fuelFills = 0;
-        for (FuelActivity activity : activities) {
-            if (activity.getActivityType() == FuelActivity.FuelActivityType.FUEL_FILL) {
-                fuelFills++;
-            }
-        }
-
-        assert fuelFills == 1;
     }
 
     public void testFuelDrainActivity() {
@@ -63,21 +49,6 @@ public class FuelSensorDataHandlerTest {
 
         double threshold = 3;
 
-        List<FuelActivity> activities = new LinkedList<>();
-        for (int start = 0, end = 9; end < deviceBeforeDrainPositions.size(); start++, end++) {
-            List<Position> subListToPass = deviceBeforeDrainPositions.subList(start, end);
-            activities.add(FuelDataActivityChecker.checkForActivity(subListToPass, fuelEventMetadataMap,
-                                                                  sensorId));
-        }
-
-        int fuelDrains = 0;
-        for (FuelActivity activity : activities) {
-            if (activity.getActivityType() == FuelActivity.FuelActivityType.FUEL_DRAIN) {
-                fuelDrains++;
-            }
-        }
-
-        assert fuelDrains == 1;
     }
 
     private List<Position> generatePositions(int size,

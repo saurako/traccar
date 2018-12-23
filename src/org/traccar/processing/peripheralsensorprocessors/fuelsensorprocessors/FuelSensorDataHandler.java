@@ -439,9 +439,11 @@ public class FuelSensorDataHandler extends BaseDataHandler {
             if(fuelActivity.isPresent()) {
                 if (FalseEventChecker.pendingListSize(deviceId) > 0) {
                     FalseEventChecker.addEventToPendingList(deviceId, fuelActivity.get());
+                    Log.debug("added dataloss > 0");
                 } else {
                     FalseEventChecker.addEventToPendingList(deviceId, fuelActivity.get());
                     FalseEventChecker.falseAlertsBeyondWindow(position);
+                    Log.debug("added dataloss = 0");
                 }
             }
             possibleDataLossByDevice.remove(deviceId);
@@ -450,10 +452,6 @@ public class FuelSensorDataHandler extends BaseDataHandler {
 
 
         //-- End Outliers
-
-        if (FalseEventChecker.pendingListSize(deviceId) > 0){
-            FalseEventChecker.checkAndReportFalseAlerts(position);
-        }
 
         List<Position> relevantPositionsListForAlerts =
                 FuelSensorDataHandlerHelper.getRelevantPositionsSubList(
@@ -465,12 +463,25 @@ public class FuelSensorDataHandler extends BaseDataHandler {
 
         if (!this.loadingOldDataFromDB && relevantPositionsListForAlerts.size() >= maxValuesForAlerts) {
             // We'll use the smoothed values to check for activity.
-            FuelActivity fuelActivity =
+            Optional<FuelActivity> fuelActivity =
                     FuelDataActivityChecker.checkForActivity(relevantPositionsListForAlerts,
                                                              deviceFuelEventMetadata,
                                                              sensorId);
 
-            FuelEventNotifier.sendNotificationIfNecessary(deviceId, fuelActivity);
+            if(fuelActivity.isPresent()) {
+                if (FalseEventChecker.pendingListSize(deviceId) > 0) {
+                    FalseEventChecker.addEventToPendingList(deviceId, fuelActivity.get());
+                    Log.debug("added normal > 0");
+                } else {
+                    FalseEventChecker.addEventToPendingList(deviceId, fuelActivity.get());
+                    FalseEventChecker.falseAlertsBeyondWindow(position);
+                    Log.debug("added normal = 0");
+                }
+            }
+        }
+
+        if (FalseEventChecker.pendingListSize(deviceId) > 0){
+            FalseEventChecker.checkAndReportFalseAlerts(position);
         }
 
         removeFirstPositionIfNecessary(positionsForDeviceSensor, deviceId);

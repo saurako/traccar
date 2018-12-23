@@ -33,10 +33,10 @@
     <entry key='processing.peripheralSensorData.hoursOfDataToLoad'>24</entry>
     <entry key='processing.peripheralSensorData.minHoursOfDataInMemory'>24</entry>
     <entry key='processing.peripheralSensorData.storedEventLookAroundSeconds'>300</entry>
-    <entry key='processing.peripheralSensorData.currentEventLookBackSeconds'>900</entry>
+    <entry key='processing.peripheralSensorData.currentEventLookBackSeconds'>2400</entry>
 
     <entry key='processing.peripheralSensorData.minValuesForMovingAverage'>9</entry>
-    <entry key='processing.peripheralSensorData.minValuesForOutlierDetection'>9</entry>
+    <entry key='processing.peripheralSensorData.minValuesForOutlierDetection'>21</entry>
     <entry key='processing.peripheralSensorData.maxValuesForAlerts'>9</entry>
     <entry key='processing.peripheralSensorData.fuelLevelChangeThresholdLiters'>5</entry>
     <entry key='processing.peripheralSensorData.fuelErrorThreshold'>0.75</entry>
@@ -55,9 +55,10 @@
     <entry key='database.url'>jdbc:mysql://localhost:3306/traccar?allowMultiQueries=true&amp;autoReconnect=true&amp;useUnicode=yes&amp;characterEncoding=UTF-8&amp;sessionVariables=sql_mode=''</entry>
 
     <entry key='database.user'>root</entry>
-    <entry key='database.password'></entry>
+    <entry key='database.password'>rahul@1234</entry>
 
     <entry key='aquila.port'>5089</entry>
+    <entry key='teltonika.port'>5027</entry>
     <!--<entry key='intellitrac.port'>6037</entry>-->
     <!--<entry key='osmandprotocol.port'>5055</entry>-->
 

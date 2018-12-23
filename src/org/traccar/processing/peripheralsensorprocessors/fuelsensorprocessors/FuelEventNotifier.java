@@ -23,7 +23,8 @@ public class FuelEventNotifier {
                               + " start lat, long " + fuelActivity.getActivityStartPosition().getLatitude()
                               + ", " + fuelActivity.getActivityStartPosition().getLongitude()
                               + " end lat, long " + fuelActivity.getActivityEndPosition().getLatitude()
-                              + ", " + fuelActivity.getActivityEndPosition().getLongitude());
+                              + ", " + fuelActivity.getActivityEndPosition().getLongitude()
+                              + "status: " + falsePositive);
 
             // Add event to events table
             String eventType =
