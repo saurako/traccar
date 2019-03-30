@@ -35,6 +35,7 @@
     <entry key='processing.peripheralSensorData.storedEventLookAroundSeconds'>300</entry>
     <entry key='processing.peripheralSensorData.currentEventLookBackSeconds'>2400</entry>
     <entry key='processing.peripheralSensorData.dataLossThresholdSeconds'>300</entry>
+    <entry key='processing.peripheralSensorData.lookAroundTimeForPacketLossSeconds'>300</entry>
 
     <entry key='processing.peripheralSensorData.minValuesForMovingAverage'>9</entry>
     <entry key='processing.peripheralSensorData.minValuesForOutlierDetection'>21</entry>
@@ -47,6 +48,7 @@
     <entry key='processing.minimumAverageMileage'>1.5</entry>
     <entry key='processing.maximumAverageMileage'>4.0</entry>
     <entry key='processing.currentAverageMileage'>2.5</entry>
+    <entry key='processing.transmissionFrequencySeconds'>60</entry>
 
     <!--<entry key='database.driver'>org.h2.Driver</entry>-->
     <!--<entry key='database.url'>jdbc:h2:./target/database</entry>-->

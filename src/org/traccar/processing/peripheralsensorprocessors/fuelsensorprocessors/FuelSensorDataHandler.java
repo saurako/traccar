@@ -26,7 +26,8 @@ public class FuelSensorDataHandler extends BaseDataHandler {
     private static int hoursOfDataToLoad;
     private static int maxValuesForAlerts;
     private static int currentEventLookBackSeconds;
-    private static int dataLossThresholdSeconds;
+    private static int dataLossThresholdMillis;
+    private static int lookAroundTimeForPacketLossSeconds;
 
     private final Map<Long, Boolean> possibleDataLossByDevice = new ConcurrentHashMap<>();
     private final Map<Long, Position> nonOutlierInLastWindowByDevice = new ConcurrentHashMap<>();
@@ -62,10 +63,13 @@ public class FuelSensorDataHandler extends BaseDataHandler {
                 Context.getConfig()
                        .getInteger("processing.peripheralSensorData.currentEventLookBackSeconds");
 
-        dataLossThresholdSeconds =
+        dataLossThresholdMillis =
                 Context.getConfig()
                        .getInteger("processing.peripheralSensorData.dataLossThresholdSeconds") * 1000;
 
+        lookAroundTimeForPacketLossSeconds =
+                Context.getConfig()
+                       .getInteger("processing.peripheralSensorData.lookAroundTimeForPacketLossSeconds");
 
     }
 
@@ -385,7 +389,7 @@ public class FuelSensorDataHandler extends BaseDataHandler {
                         positionsForDeviceSensor, position, minValuesForOutlierDetection, currentEventLookBackSeconds);
 
         if (lastPacketProcessed.isPresent()
-            && position.getDeviceTime().getTime() - lastPacketProcessed.get().getDeviceTime().getTime() > dataLossThresholdSeconds) {
+            && position.getDeviceTime().getTime() - lastPacketProcessed.get().getDeviceTime().getTime() > dataLossThresholdMillis) {
             possibleDataLossByDevice.put(deviceId, true);
         }
 
@@ -452,11 +456,24 @@ public class FuelSensorDataHandler extends BaseDataHandler {
         //-- End Outliers
 
         if (possibleDataLoss && nonOutlierInLastWindowByDevice.containsKey(deviceId)) {
+
+            Position nonOutlierInLastWindow = nonOutlierInLastWindowByDevice.get(deviceId);
+            DeviceAttributes deviceAttributes = Context.getDeviceManager().getDeviceAttributes(deviceId);
+
+            // Interpolate values.
+            // TODO: we'll need to save this to the db, if we intend to do that.
+            List<Position> interpolatedPositions = interpolateDataLossPositions(positionsForDeviceSensor,
+                                                                                nonOutlierInLastWindow,
+                                                                                positionUnderEvaluation,
+                                                                                deviceAttributes);
+
+            positionsForDeviceSensor.addAll(interpolatedPositions);
+
             Optional<FuelActivity> fuelActivity =
                     FuelDataActivityChecker.checkForActivityIfDataLoss(outlierCheckPosition,
-                                                                       nonOutlierInLastWindowByDevice.get(deviceId),
+                                                                       nonOutlierInLastWindow,
                                                                        fuelTankMaxVolume);
-
+            
             if(fuelActivity.isPresent()) {
                 sendNotificationIfNecessary(deviceId, fuelActivity.get());
             }
@@ -487,6 +504,59 @@ public class FuelSensorDataHandler extends BaseDataHandler {
         }
 
         removeFirstPositionIfNecessary(positionsForDeviceSensor, deviceId);
+    }
+
+    public List<Position> interpolateDataLossPositions(TreeMultiset<Position> positionsForDeviceSensor,
+                                                       Position lastNonOutlierPacket,
+                                                       Position positionUnderEvaluation,
+                                                       DeviceAttributes deviceAttributes) {
+
+        long startDeviceTime = lastNonOutlierPacket.getDeviceTime().getTime();
+        long endDeviceTime = positionUnderEvaluation.getDeviceTime().getTime();
+        long timeDifferenceSeconds = (endDeviceTime - startDeviceTime) / 1000;
+        int transmissionFreqSeconds = deviceAttributes.getTransmissionFrequencySeconds();
+        int numberOfPacketsLost = (int) (timeDifferenceSeconds / transmissionFreqSeconds);
+
+        List<Position> leftHandValuesForMedianForDataInterpolation =
+                FuelSensorDataHandlerHelper.getRelevantPositionsSubList(
+                        positionsForDeviceSensor,
+                        lastNonOutlierPacket,
+                        maxValuesForAlerts,
+                        lookAroundTimeForPacketLossSeconds);
+
+        List<Position> rightHandValuesForMedianForDataInterpolation =
+                FuelSensorDataHandlerHelper.getRelevantPositionsSubList(
+                        positionsForDeviceSensor,
+                        lastNonOutlierPacket,
+                        maxValuesForAlerts,
+                        -lookAroundTimeForPacketLossSeconds); // -ve coz we want to look ahead.
+
+        double leftHandMedian = FuelSensorDataHandlerHelper.getMedianValue(leftHandValuesForMedianForDataInterpolation,
+                                                                       0,
+                                                                       leftHandValuesForMedianForDataInterpolation.size());
+
+        double rightHandMedian = FuelSensorDataHandlerHelper.getMedianValue(rightHandValuesForMedianForDataInterpolation,
+                                                                        0,
+                                                                        rightHandValuesForMedianForDataInterpolation.size());
+
+        double rawValueDifference = (rightHandMedian - leftHandMedian) / numberOfPacketsLost;
+        double rawBeforeLeftMedian = leftHandMedian - rawValueDifference;
+
+        List<Position> interpolatedPositions = new ArrayList<>();
+
+        for (int i = 1; i <= numberOfPacketsLost; i++) {
+            double newFuelRawValue = rawBeforeLeftMedian + (rawValueDifference * i);
+            Position interpolated = new Position();
+            long newDeviceTime = startDeviceTime + (i * transmissionFreqSeconds);
+
+            //TODO: be sure that this is int eh same timezone as the device.
+            interpolated.setDeviceTime(new Date(newDeviceTime));
+            interpolated.set(Position.KEY_CALIBRATED_FUEL_LEVEL, newFuelRawValue);
+
+            interpolatedPositions.add(interpolated);
+        }
+
+        return interpolatedPositions;
     }
 
     private void sendNotificationIfNecessary(final long deviceId, final FuelActivity fuelActivity) {

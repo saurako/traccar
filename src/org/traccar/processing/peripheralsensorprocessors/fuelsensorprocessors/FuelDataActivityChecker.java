@@ -6,11 +6,9 @@ import org.traccar.model.Position;
 import org.traccar.processing.peripheralsensorprocessors.fuelsensorprocessors.FuelActivity.FuelActivityType;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class FuelDataActivityChecker {
 
@@ -35,7 +33,7 @@ public class FuelDataActivityChecker {
 
         long deviceId = readingsForDevice.get(0).getDeviceId();
 
-        DeviceConsumptionInfo consumptionInfo = Context.getDeviceManager().getDeviceConsumptionInfo(deviceId);
+        DeviceAttributes consumptionInfo = Context.getDeviceManager().getDeviceAttributes(deviceId);
         double fuelLevelChangeThreshold = consumptionInfo.getFuelActivityThreshold();
 
         String lookupKey = deviceId + "_" + sensorId;
@@ -50,7 +48,7 @@ public class FuelDataActivityChecker {
                 deviceFuelEventMetadata.put(lookupKey, new FuelEventMetadata());
 
                 FuelEventMetadata fuelEventMetadata = deviceFuelEventMetadata.get(lookupKey);
-                double leftMedian = getMedianValue(readingsForDevice, 0, midPoint);
+                double leftMedian = FuelSensorDataHandlerHelper.getMedianValue(readingsForDevice, 0, midPoint);
                 fuelEventMetadata.setStartLevel(leftMedian);
 
                 fuelEventMetadata.setErrorCheckStart((double) readingsForDevice.get(0)
@@ -102,7 +100,7 @@ public class FuelDataActivityChecker {
             Position midPointPosition = readingsForDevice.get(midPoint);
             FuelEventMetadata fuelEventMetadata = deviceFuelEventMetadata.get(lookupKey);
 
-            double rightMedian = getMedianValue(readingsForDevice, midPoint, readingsSize);
+            double rightMedian = FuelSensorDataHandlerHelper.getMedianValue(readingsForDevice, midPoint, readingsSize);
             fuelEventMetadata.setEndLevel(rightMedian);
 
             fuelEventMetadata.setErrorCheckEnd((double) readingsForDevice.get(readingsForDevice.size() - 1)
@@ -169,7 +167,7 @@ public class FuelDataActivityChecker {
                                                                     final Position lastPosition,
                                                                     final Optional<Long> maxTankMaxVolume) {
 
-        DeviceConsumptionInfo consumptionInfo = Context.getDeviceManager().getDeviceConsumptionInfo(position.getDeviceId());
+        DeviceAttributes consumptionInfo = Context.getDeviceManager().getDeviceAttributes(position.getDeviceId());
         final boolean requiredFieldsPresent = FuelDataLossChecker.checkRequiredFieldsPresent(lastPosition, position, consumptionInfo);
         if (!requiredFieldsPresent) {
             // Not enough info to process data loss.
@@ -250,23 +248,6 @@ public class FuelDataActivityChecker {
 
         copyOfReadingsForDevice.removeAll(activityWindow);
         activityWindow.addAll(copyOfReadingsForDevice);
-    }
-
-    private static double getMedianValue(final List<Position> readingsForDevice,
-                                         final int start,
-                                         final int end) {
-
-        final List<Double> readings = readingsForDevice.subList(start, end)
-                                                       .stream()
-                                                       .map(p -> (double) p.getAttributes()
-                                                                           .get(Position.KEY_CALIBRATED_FUEL_LEVEL))
-                                                       .collect(Collectors.toList());
-
-        // Sort them in the ascending order
-        readings.sort(Comparator.naturalOrder());
-
-        // pick the middle position
-        return readings.get((readings.size() - 1) / 2);
     }
 
     private static void checkForMissedOutlier(final FuelEventMetadata fuelEventMetadata,

@@ -27,6 +27,7 @@ public class FuelSensorDataHandlerHelper {
                                                              Position position,
                                                              int minListSize,
                                                              int currentEventLookBackSeconds) {
+
         return getRelevantPositionsSubList(positionsForSensor,
                                            position,
                                            minListSize,
@@ -205,5 +206,22 @@ public class FuelSensorDataHandlerHelper {
         } catch (SQLException e) {
             Log.debug("Exception while updating outlier position with id: " + outlierPosition.getId());
         }
+    }
+
+    public static double getMedianValue(final List<Position> readingsForDevice,
+                                         final int start,
+                                         final int end) {
+
+        final List<Double> readings = readingsForDevice.subList(start, end)
+                                                       .stream()
+                                                       .map(p -> (double) p.getAttributes()
+                                                                           .get(Position.KEY_CALIBRATED_FUEL_LEVEL))
+                                                       .collect(Collectors.toList());
+
+        // Sort them in the ascending order
+        readings.sort(Comparator.naturalOrder());
+
+        // pick the middle position
+        return readings.get((readings.size() - 1) / 2);
     }
 }

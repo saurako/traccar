@@ -23,7 +23,7 @@ public class FuelDataLossChecker {
 
 
         long deviceId = startPosition.getDeviceId();
-        DeviceConsumptionInfo consumptionInfo = Context.getDeviceManager().getDeviceConsumptionInfo(deviceId);
+        DeviceAttributes consumptionInfo = Context.getDeviceManager().getDeviceAttributes(deviceId);
         boolean requiredFieldsPresent = checkRequiredFieldsPresent(startPosition, endPosition, consumptionInfo);
 
         if (!requiredFieldsPresent) {
@@ -57,7 +57,7 @@ public class FuelDataLossChecker {
 
     public static boolean checkRequiredFieldsPresent(Position startPosition,
                                                      Position endPosition,
-                                                     DeviceConsumptionInfo consumptionInfo) {
+                                                     DeviceAttributes consumptionInfo) {
 
         String consumptionType = consumptionInfo.getDeviceConsumptionType().toLowerCase();
         switch (consumptionType) {
@@ -84,7 +84,7 @@ public class FuelDataLossChecker {
     public static ExpectedFuelConsumption getExpectedFuelConsumptionValues(Position startPosition,
                                                                            Position endPosition,
                                                                            Optional<Long> maxCapacity,
-                                                                           DeviceConsumptionInfo consumptionInfo) {
+                                                                           DeviceAttributes consumptionInfo) {
 
         double allowedDeviation = maxCapacity.orElse(DEFAULT_MAX_CAPACITY) * 0.01;
 
@@ -115,7 +115,7 @@ public class FuelDataLossChecker {
     private static ExpectedFuelConsumption getExpectedDistanceFuelConsumptionValues(Position startPosition,
                                                                                     Position endPosition,
                                                                                     double allowedDeviation,
-                                                                                    DeviceConsumptionInfo consumptionInfo) {
+                                                                                    DeviceAttributes consumptionInfo) {
 
         double startTotalGPSDistanceInMeters = (double) startPosition.getAttributes().get(Position.KEY_TOTAL_DISTANCE);
         double endTotalGPSDistanceInMeters = (double) endPosition.getAttributes().get(Position.KEY_TOTAL_DISTANCE);
@@ -157,7 +157,7 @@ public class FuelDataLossChecker {
     private static ExpectedFuelConsumption getExpectedHourlyFuelConsumptionValues(Position startPosition,
                                                                                   Position endPosition,
                                                                                   double allowedDeviation,
-                                                                                  DeviceConsumptionInfo consumptionInfo) {
+                                                                                  DeviceAttributes consumptionInfo) {
 
         long maxRunningTime = endPosition.getLong(Position.KEY_TOTAL_IGN_ON_MILLIS) - startPosition.getLong(Position.KEY_TOTAL_IGN_ON_MILLIS);
 
