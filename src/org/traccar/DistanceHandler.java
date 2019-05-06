@@ -48,6 +48,18 @@ public class DistanceHandler extends BaseDataHandler {
     protected Position handlePosition(Position position) {
 
         double distance = 0.0;
+        /*
+        //we need to correctly obtain the category of device here. this is just an example
+        if (device.getCategory() == "genset") {
+        	if (position.isValid == 0) {
+        		Position last = getLastPosition(position.getDeviceId());
+        		position.setLatitude(last.getLatitude());
+        		position.setLongitude(last.getLongitude()); 
+        	}
+	        position.set(Position.KEY_DISTANCE, 0.0);
+            position.set(Position.KEY_TOTAL_DISTANCE, 0.0);		
+        }
+		*/
         if (position.getAttributes().containsKey(Position.KEY_DISTANCE)) {
             distance = position.getDouble(Position.KEY_DISTANCE);
         }
