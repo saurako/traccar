@@ -50,7 +50,7 @@ public class DistanceHandler extends BaseDataHandler {
         double distance = 0.0;
         /*
         //we need to correctly obtain the category of device here. this is just an example
-        if (device.getCategory() == "genset") {
+        if (device.getCategory() == "stationary") {
         	if (position.isValid == 0) {
         		Position last = getLastPosition(position.getDeviceId());
         		position.setLatitude(last.getLatitude());
