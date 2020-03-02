@@ -87,7 +87,7 @@ public class DataManager {
         forceLdap = config.getBoolean("ldap.force");
 
         initDatabase();
-        initDatabaseSchema();
+//        initDatabaseSchema();
     }
 
     public DataSource getDataSource() {

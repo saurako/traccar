@@ -2,9 +2,15 @@ package org.traccar.processing.peripheralsensorprocessors.fuelsensorprocessors;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.TreeMultiset;
+import org.eclipse.jetty.util.StringUtil;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.traccar.BaseDataHandler;
 import org.traccar.Context;
+import org.traccar.helper.DateUtil;
 import org.traccar.helper.Log;
+import org.traccar.helper.Parser;
 import org.traccar.model.Event;
 import org.traccar.model.PeripheralSensor;
 import org.traccar.model.Position;
@@ -134,15 +140,15 @@ public class FuelSensorDataHandler extends BaseDataHandler {
                 }
 
                 String fuelDataField = sensorOnDevice.getFuelDataFieldName();
-                if (loadingOldDataFromDB || position.getAttributes().containsKey(fuelDataField)) {
-                    // This is a position from the DB, add to the list and move on.
-                    // If we don't skip further processing, it might trigger FCM notification unnecessarily.
-                    if (!positionsForDeviceSensor.contains(position)) {
-                        positionsForDeviceSensor.add(position);
-                    }
-                    removeFirstPositionIfNecessary(positionsForDeviceSensor, lookUpKey);
-                    continue;
-                }
+//                if (loadingOldDataFromDB || position.getAttributes().containsKey(fuelDataField)) {
+//                    // This is a position from the DB, add to the list and move on.
+//                    // If we don't skip further processing, it might trigger FCM notification unnecessarily.
+//                    if (!positionsForDeviceSensor.contains(position)) {
+//                        positionsForDeviceSensor.add(position);
+//                    }
+//                    removeFirstPositionIfNecessary(positionsForDeviceSensor, lookUpKey);
+//                    continue;
+//                }
 
                 processSensorData(position, sensorOnDevice);
             }
@@ -357,7 +363,7 @@ public class FuelSensorDataHandler extends BaseDataHandler {
     }
 
     private void loadOldPositions(String protocol) {
-        this.loadingOldDataFromDB = true;
+//        this.loadingOldDataFromDB = true;
 
         if (this.hoursOfDataToLoad == 0) {
             loadingOldDataFromDB = false;
@@ -386,6 +392,9 @@ public class FuelSensorDataHandler extends BaseDataHandler {
             Log.info(String.format("Number of active devices on %s protocol: %d", protocol, deviceIdToLatestDateMap.size()));
 
             for (Long deviceId : deviceIdToLatestDateMap.keySet()) {
+                if (deviceId != 98) {
+                    continue;
+                }
 
                 Optional<List<PeripheralSensor>> linkedDevices = Context.getPeripheralSensorManager()
                                                                         .getLinkedPeripheralSensors(deviceId);
@@ -401,8 +410,17 @@ public class FuelSensorDataHandler extends BaseDataHandler {
                 Log.info(String.format("Loading data from %s to %s for deviceId %d",
                                        hoursAgo, deviceLastPositionDate, deviceId));
 
+//                Collection<Position> devicePositionsInLastDay =
+//                        getDataManager().getPositions(deviceId, hoursAgo, new Date());
+
+                DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+
+                Date start = DateTime.parse("2019-12-25 10:30:00", formatter).toDate();
+                Date end = DateTime.parse("2019-12-25 11:30:00", formatter).toDate();
+
+
                 Collection<Position> devicePositionsInLastDay =
-                        getDataManager().getPositions(deviceId, hoursAgo, new Date());
+                        getDataManager().getPositions(deviceId, start, end);
 
                 for (Position position : devicePositionsInLastDay) {
                     handlePosition(position);
@@ -538,7 +556,7 @@ public class FuelSensorDataHandler extends BaseDataHandler {
                                                                        nonOutlierInLastWindowByDevice.get(deviceId),
                                                                        fuelTankMaxVolume, fuelSensor);
 
-            fuelActivity.ifPresent(activity -> sendNotificationIfNecessary(deviceId, activity, fuelSensor, fuelTankMaxVolume));
+            fuelActivity.ifPresent(activity -> checkSanityAndNotify(deviceId, activity, fuelSensor, fuelTankMaxVolume));
 
             possibleDataLossByDevice.remove(deviceId);
             nonOutlierInLastWindowByDevice.remove(deviceId);
@@ -569,41 +587,35 @@ public class FuelSensorDataHandler extends BaseDataHandler {
                                                                  deviceFuelEventMetadata,
                                                                  fuelSensor);
 
-                if (fuelActivity.isPresent()) {
-                    sendNotificationIfNecessary(deviceId, fuelActivity.get(), fuelSensor, fuelTankMaxVolume);
-                }
+                fuelActivity.ifPresent(fuelActivity1 -> checkSanityAndNotify(deviceId, fuelActivity1, fuelSensor));
             }
         }
 
         removeFirstPositionIfNecessary(positionsForDeviceSensor, lookupKey);
     }
 
-    private void sendNotificationIfNecessary(final long deviceId,
-                                             final FuelActivity fuelActivity,
-                                             PeripheralSensor fuelSensor,
-                                             Optional<Long> fuelTankMaxVolume) {
+    private void checkSanityAndNotify(final long deviceId,
+                                      final FuelActivity fuelActivity,
+                                      final PeripheralSensor fuelSensor) {
 
-        boolean isDrain = fuelActivity.getActivityType() == FuelActivityType.FUEL_DRAIN
-                || fuelActivity.getActivityType() == FuelActivityType.PROBABLE_FUEL_DRAIN;
+        if (fuelActivity.getActivityType().equals(FuelActivityType.NONE)) {
+            return;
+        }
 
-        if (isDrain) {
-            boolean isConsumptionExpected =
-                    FuelConsumptionChecker.isFuelConsumptionAsExpected(fuelActivity.getActivityStartPosition(),
-                                                                       fuelActivity.getActivityEndPosition(),
-                                                                       fuelActivity.getChangeVolume(),
-                                                                       fuelTankMaxVolume,
-                                                                       fuelSensor);
-            if (!isConsumptionExpected) {
-                logDebugIfNotLoading(String.format("[Events] Detected drain not within expected consumption %d", deviceId),deviceId);
-                sendNotificationIfNecessary(deviceId, fuelActivity, fuelSensor.getPeripheralSensorId());
-            } else {
-                logDebugIfNotLoading(String.format("[Events] Detected drain that was within expected consumption, not sending notification %d", deviceId), deviceId);
-                fuelActivity.setActivityType(FuelActivityType.DRAIN_WITHIN_CONSUMPTION);
-                saveEventToDB(deviceId, fuelActivity, fuelSensor.getPeripheralSensorId());
-            }
+        String lookupKey = getLookupKey(deviceId, fuelSensor.getPeripheralSensorId());
+        List<Position> positionsForSensor = FuelSensorDataHandlerHelper.getPositionsAsList(previousPositions.get(lookupKey),
+                                                                                           fuelSensor.getFuelOutlierFieldName(),
+                                                                                           true);
 
+
+
+        FuelEventSanityChecker sanityChecker = new FuelEventSanityChecker();
+        boolean isTruePositive = sanityChecker.isTruePositive(fuelActivity, positionsForSensor, fuelSensor, allowedDeviation);
+
+        if (isTruePositive) {
+//            sendNotificationIfNecessary(deviceId, fuelActivity, fuelSensor.getPeripheralSensorId());
         } else {
-            sendNotificationIfNecessary(deviceId, fuelActivity, fuelSensor.getPeripheralSensorId());
+//                saveEventToDB(deviceId, fuelActivity, fuelSensor.getPeripheralSensorId());
         }
     }
 
@@ -642,6 +654,12 @@ public class FuelSensorDataHandler extends BaseDataHandler {
         event.set("startLong", fuelActivity.getActivityStartPosition().getLongitude());
         event.set("endLat", fuelActivity.getActivityEndPosition().getLatitude());
         event.set("endLong", fuelActivity.getActivityEndPosition().getLongitude());
+
+        if (StringUtil.isNotBlank(fuelActivity.getFalsePositiveReason())) {
+            event.set("falsePositiveReason", fuelActivity.getFalsePositiveReason());
+
+        }
+
 
         try {
             getDataManager().addObject(event);

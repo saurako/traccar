@@ -18,7 +18,6 @@ public class FuelConsumptionChecker {
     public static boolean isFuelConsumptionAsExpected(Position startPosition,
                                                       Position endPosition,
                                                       double changeVolume,
-                                                      Optional<Long> maxCapacity,
                                                       PeripheralSensor fuelSensor) {
 
         long deviceId = startPosition.getDeviceId();
@@ -35,12 +34,18 @@ public class FuelConsumptionChecker {
             return false;
         }
 
-        String maxCapacityString = maxCapacity.map(Object::toString).orElse("n/a");
-        FuelSensorDataHandlerHelper.logDebugIfDeviceId(String.format("[ConsumptionChecker] MaxCapacity of sensorId %d on deviceId %d is %s ",
-                                                                     fuelSensor.getPeripheralSensorId(), deviceId, maxCapacityString), deviceId);
+        Optional<Long> fuelTankMaxVolume =
+                Context.getPeripheralSensorManager()
+                       .getFuelTankMaxCapacity(deviceId,
+                                               fuelSensor.getPeripheralSensorId());
+
+        double allowedDeviation = FuelConsumptionChecker.getAllowedDeviation(fuelTankMaxVolume);
+
+        FuelSensorDataHandlerHelper.logDebugIfDeviceId(String.format("[ConsumptionChecker] Allowed deviation on sensorId %d on deviceId %d is %f ",
+                                                                     fuelSensor.getPeripheralSensorId(), deviceId, allowedDeviation), deviceId);
 
         ExpectedFuelConsumption expectedFuelConsumption =
-                getExpectedFuelConsumptionValues(startPosition, endPosition, maxCapacity, consumptionInfo);
+                getExpectedFuelConsumptionValues(startPosition, endPosition, allowedDeviation, consumptionInfo);
 
         boolean consumptionAsExpected = expectedFuelConsumption != null
                 && isFuelConsumptionAsExpected(changeVolume, expectedFuelConsumption);
@@ -90,8 +95,14 @@ public class FuelConsumptionChecker {
                                                                            Optional<Long> maxCapacity,
                                                                            DeviceConsumptionInfo consumptionInfo) {
 
-        double allowedDeviation = (maxCapacity.map(tankMaxCapacity -> Math.min(tankMaxCapacity, DEFAULT_MAX_CAPACITY))
-                                              .orElse(DEFAULT_MAX_CAPACITY)) * 0.01;
+        double allowedDeviation = getAllowedDeviation(maxCapacity);
+        return getExpectedFuelConsumptionValues(startPosition, endPosition, allowedDeviation, consumptionInfo);
+    }
+
+    public static ExpectedFuelConsumption getExpectedFuelConsumptionValues(Position startPosition,
+                                                                           Position endPosition,
+                                                                           double allowedDeviation,
+                                                                           DeviceConsumptionInfo consumptionInfo) {
 
         switch (consumptionInfo.getDeviceConsumptionType().toLowerCase()) {
 
@@ -118,6 +129,11 @@ public class FuelConsumptionChecker {
                 return null;
 
         }
+    }
+
+    public static double getAllowedDeviation(Optional<Long> maxCapacity) {
+        return (maxCapacity.map(tankMaxCapacity -> Math.min(tankMaxCapacity, DEFAULT_MAX_CAPACITY))
+                                                  .orElse(DEFAULT_MAX_CAPACITY)) * 0.01;
     }
 
     private static ExpectedFuelConsumption getExpectedDistanceFuelConsumptionValues(Position startPosition,

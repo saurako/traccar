@@ -68,9 +68,7 @@ public class FuelSensorDataHandlerHelper {
                                                              long previousWindowStart) {
 
         if (positionsForSensor.size() < minListSize) {
-            return positionsForSensor.stream()
-                                     .filter(p -> !excludeOutliers || positionIsMarkedOutlier(p, sensorOutlierFieldName))
-                                     .collect(Collectors.toList());
+            return getPositionsAsList(positionsForSensor, sensorOutlierFieldName, excludeOutliers);
         }
 
         Position fromPosition = new Position();
@@ -109,6 +107,14 @@ public class FuelSensorDataHandlerHelper {
         logDebugIfDeviceId("[RELEVANT_SUBLIST] sublist size: " + sublistToReturn.size(), deviceId);
 
         return sublistToReturn;
+    }
+
+    public static List<Position> getPositionsAsList(TreeMultiset<Position> positionsForSensor,
+                                                     String sensorOutlierFieldName,
+                                                     boolean excludeOutliers) {
+        return positionsForSensor.stream()
+                                 .filter(p -> !excludeOutliers || positionIsMarkedOutlier(p, sensorOutlierFieldName))
+                                 .collect(Collectors.toList());
     }
 
     private static boolean positionIsMarkedOutlier(final Position position, final String sensorOutlierFieldName) {
@@ -233,16 +239,17 @@ public class FuelSensorDataHandlerHelper {
     }
 
     public static void updatePosition(final Position outlierPosition) {
-        try {
-            Context.getDataManager().updateObject(outlierPosition);
-        } catch (SQLException e) {
-            logDebugIfDeviceId("Exception while updating outlier position with id: " + outlierPosition.getId(), outlierPosition.getDeviceId());
-        }
+//        try {
+//            Context.getDataManager().updateObject(outlierPosition);
+//        } catch (SQLException e) {
+//            logDebugIfDeviceId("Exception while updating outlier position with id: " + outlierPosition.getId(), outlierPosition.getDeviceId());
+//        }
     }
 
     public static void logDebugIfDeviceId(String logMessage, long deviceId) {
-        if (deviceId == logForDeviceId) {
+//        if (deviceId == logForDeviceId) {
             Log.debug(logMessage);
-        }
+//        }
+
     }
 }

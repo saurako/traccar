@@ -29,7 +29,10 @@ public class FuelActivity {
         PROBABLE_FUEL_FILL(Event.TYPE_PROBABLE_FILL),
         EXPECTED_FUEL_FILL(Event.TYPE_EXPECTED_FILL),
         PROBABLE_FUEL_DRAIN(Event.TYPE_PROBABLE_DRAIN),
-        DRAIN_WITHIN_CONSUMPTION(Event.TYPE_DRAIN_WITHIN_CONSUMPTION);
+        DRAIN_WITHIN_CONSUMPTION(Event.TYPE_DRAIN_WITHIN_CONSUMPTION),
+        DRAIN_DUE_TO_NOISE(Event.TYPE_DRAIN_DUE_TO_NOISE),
+        FILL_DUE_TO_NOISE(Event.TYPE_FILL_DUE_TO_NOISE);
+
 
         private String nameString;
 
@@ -49,6 +52,7 @@ public class FuelActivity {
     private Date activityEndTime;
     private Position activityStartPosition;
     private Position activityEndPosition;
+    private String falsePositiveReason;
 
     public FuelActivityType getActivityType() {
         return activityType;
@@ -97,5 +101,23 @@ public class FuelActivity {
 
     public void setActivityEndPosition(final Position activityEndPosition) {
         this.activityEndPosition = activityEndPosition;
+    }
+
+    public String getFalsePositiveReason() {
+        return falsePositiveReason;
+    }
+
+    public void setFalsePositiveReason(String falsePositiveReason) {
+        this.falsePositiveReason = falsePositiveReason;
+    }
+
+    public boolean isDrain() {
+        return activityType == FuelActivityType.FUEL_DRAIN
+                || activityType == FuelActivityType.PROBABLE_FUEL_DRAIN;
+    }
+
+    public boolean isFill() {
+        return activityType == FuelActivityType.FUEL_FILL
+                || activityType == FuelActivityType.PROBABLE_FUEL_FILL;
     }
 }
