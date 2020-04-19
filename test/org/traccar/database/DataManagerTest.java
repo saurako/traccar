@@ -20,7 +20,7 @@ public class DataManagerTest {
     public void constructObjectQuery() {
         assertEquals("SELECT * FROM users",
                 DataManager.constructObjectQuery(DataManager.ACTION_SELECT_ALL, User.class, false));
-        assertEquals("DELETE FROM groups WHERE id = :id",
+        assertEquals("DELETE FROM `groups` WHERE id = :id",
                 DataManager.constructObjectQuery(DataManager.ACTION_DELETE, Group.class, false));
         assertEquals("SELECT * FROM positions WHERE id = :id",
                 DataManager.constructObjectQuery(DataManager.ACTION_SELECT, Position.class, false));

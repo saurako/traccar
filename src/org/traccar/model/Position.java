@@ -303,6 +303,26 @@ public class Position extends Message {
         this.network = network;
     }
 
+//    private double totalDistance;
+//
+//    public double getTotalDistance() {
+//        return totalDistance;
+//    }
+//
+//    public void setTotalDistance(double totalDistance) {
+//        this.totalDistance = totalDistance;
+//    }
+//
+//    private long totalIgnitionTime;
+//
+//    public long getTotalIgnitionTime() {
+//        return totalIgnitionTime;
+//    }
+//
+//    public void setTotalIgnitionTime(long totalIgnitionTime) {
+//        this.totalIgnitionTime = totalIgnitionTime;
+//    }
+
     @Override
     @QueryIgnore
     public String getType() {

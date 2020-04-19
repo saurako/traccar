@@ -284,6 +284,9 @@ public class DataManager {
         if (!result.endsWith("s")) {
             result += "s";
         }
+        if (result.equalsIgnoreCase("groups")) {
+            return String.format("`%s`", result);
+        }
         return result;
     }
 

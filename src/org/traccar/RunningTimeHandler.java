@@ -44,7 +44,8 @@ public class RunningTimeHandler extends BaseDataHandler {
 
         if (StringUtil.isNotBlank(consumptionType) && consumptionTypesWithoutIgnition.contains(consumptionType)) {
             position.set(KEY_IGN_ON_MILLIS, 0L);
-            position.set(KEY_TOTAL_IGN_ON_MILLIS, 0);
+            position.set(KEY_TOTAL_IGN_ON_MILLIS, 0L);
+            // position.setTotalIgnitionTime(0L);
             return position;
         }
 
@@ -126,12 +127,14 @@ public class RunningTimeHandler extends BaseDataHandler {
 
         position.set(KEY_IGN_ON_MILLIS, 0L);
         position.set(KEY_TOTAL_IGN_ON_MILLIS, 0);
+        // position.setTotalIgnitionTime(0);
     }
 
     private void initializeHourMeter(final Position position, final Position lastPosition) {
         long totalHours = lastPosition.getLong(KEY_TOTAL_IGN_ON_MILLIS);
         position.set(KEY_IGN_ON_MILLIS, 0L);
         position.set(KEY_TOTAL_IGN_ON_MILLIS, totalHours);
+        // position.setTotalIgnitionTime(totalHours);
     }
 
     private void continueRunningHourMeter(final Position position, final Position lastPosition) {
@@ -141,6 +144,7 @@ public class RunningTimeHandler extends BaseDataHandler {
 
         position.set(KEY_IGN_ON_MILLIS, millisIgnOn);
         position.set(KEY_TOTAL_IGN_ON_MILLIS, totalMillisIgnOn);
+        // position.setTotalIgnitionTime(totalMillisIgnOn);
     }
 
     private void carryValuesForward(final Position position, final Position lastPosition) {
@@ -150,6 +154,7 @@ public class RunningTimeHandler extends BaseDataHandler {
 
         position.set(KEY_IGN_ON_MILLIS, lastPosition.getLong(KEY_IGN_ON_MILLIS));
         position.set(KEY_TOTAL_IGN_ON_MILLIS, lastPosition.getLong(KEY_TOTAL_IGN_ON_MILLIS));
+        // position.setTotalIgnitionTime(lastPosition.getLong(KEY_TOTAL_IGN_ON_MILLIS));
     }
 
     private void getLatestPositionBefore(Position lastPosition, Position position) {
