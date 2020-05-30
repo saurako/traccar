@@ -10,14 +10,14 @@
 
     <update tableName="devices">
       <column name="groupid"/>
-      <where>groupid NOT IN (SELECT id FROM groups)</where>
+      <where>groupid NOT IN (SELECT id FROM `groups`)</where>
     </update>
 
     <addForeignKeyConstraint baseColumnNames="groupid" baseTableName="devices" constraintName="fk_device_group_groupid" onDelete="SET NULL" onUpdate="RESTRICT" referencedColumnNames="id" referencedTableName="groups"/>
 
     <update tableName="groups">
       <column name="groupid"/>
-      <where>groupid NOT IN (SELECT id FROM (SELECT DISTINCT id FROM groups) AS groups_ids)</where>
+      <where>groupid NOT IN (SELECT id FROM (SELECT DISTINCT id FROM `groups`) AS groups_ids)</where>
     </update>
 
     <addColumn tableName="devices">

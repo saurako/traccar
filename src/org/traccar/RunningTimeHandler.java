@@ -44,7 +44,7 @@ public class RunningTimeHandler extends BaseDataHandler {
 
         if (StringUtil.isNotBlank(consumptionType) && consumptionTypesWithoutIgnition.contains(consumptionType)) {
             position.set(KEY_IGN_ON_MILLIS, 0L);
-            position.set(KEY_TOTAL_IGN_ON_MILLIS, 0);
+            position.set(KEY_TOTAL_IGN_ON_MILLIS, 0L);
             return position;
         }
 

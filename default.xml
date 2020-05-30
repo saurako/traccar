@@ -164,7 +164,7 @@
     </entry>
 
     <entry key='database.selectGroupsAll'>
-        SELECT * FROM groups
+        SELECT * FROM `groups`
     </entry>
 
     <entry key='database.insertGroup'>
@@ -176,7 +176,7 @@
     </entry>
 
     <entry key='database.deleteGroup'>
-        DELETE FROM groups WHERE id = :id
+        DELETE FROM `groups` WHERE id = :id
     </entry>
 
     <entry key='database.linkGroup'>

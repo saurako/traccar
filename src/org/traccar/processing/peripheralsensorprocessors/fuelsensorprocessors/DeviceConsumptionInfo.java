@@ -2,6 +2,7 @@ package org.traccar.processing.peripheralsensorprocessors.fuelsensorprocessors;
 
 import org.apache.commons.lang.StringUtils;
 import org.traccar.Context;
+import org.traccar.helper.Log;
 import org.traccar.model.Device;
 
 public class DeviceConsumptionInfo {
@@ -57,29 +58,33 @@ public class DeviceConsumptionInfo {
 
     public DeviceConsumptionInfo(Device device) {
         this();
+        try {
+            if (StringUtils.isNotBlank(device.getString(CONSUMPTION_TYPE_ATTR))) {
+                deviceConsumptionType = device.getString(CONSUMPTION_TYPE_ATTR);
+            }
 
-        if (StringUtils.isNotBlank(device.getString(CONSUMPTION_TYPE_ATTR))) {
-            deviceConsumptionType = device.getString(CONSUMPTION_TYPE_ATTR);
-        }
+            if (device.getAttributes().containsKey(MIN_AVG_CONSUMPTION_RATE_ATTR)) {
+                minDeviceConsumptionRate = device.getDouble(MIN_AVG_CONSUMPTION_RATE_ATTR);
+            }
 
-        if (device.getAttributes().containsKey(MIN_AVG_CONSUMPTION_RATE_ATTR)) {
-            minDeviceConsumptionRate = device.getDouble(MIN_AVG_CONSUMPTION_RATE_ATTR);
-        }
+            if (device.getAttributes().containsKey(MAX_AVG_CONSUMPTION_RATE_ATTR)) {
+                maxDeviceConsumptionRate = device.getDouble(MAX_AVG_CONSUMPTION_RATE_ATTR);
+            }
 
-        if (device.getAttributes().containsKey(MAX_AVG_CONSUMPTION_RATE_ATTR)) {
-            maxDeviceConsumptionRate = device.getDouble(MAX_AVG_CONSUMPTION_RATE_ATTR);
-        }
+            if (device.getAttributes().containsKey(ASSUMED_AVG_CONSUMPTION_RATE_ATTR)) {
+                assumedDeviceConsumptionRate = device.getDouble(ASSUMED_AVG_CONSUMPTION_RATE_ATTR);
+            }
 
-        if (device.getAttributes().containsKey(ASSUMED_AVG_CONSUMPTION_RATE_ATTR)) {
-            assumedDeviceConsumptionRate = device.getDouble(ASSUMED_AVG_CONSUMPTION_RATE_ATTR);
-        }
+            if (device.getAttributes().containsKey(FUEL_ACTIVITY_THRESHOLD_ATTR)) {
+                fuelActivityThreshold = device.getDouble(FUEL_ACTIVITY_THRESHOLD_ATTR);
+            }
 
-        if (device.getAttributes().containsKey(FUEL_ACTIVITY_THRESHOLD_ATTR)) {
-            fuelActivityThreshold = device.getDouble(FUEL_ACTIVITY_THRESHOLD_ATTR);
-        }
-
-        if (device.getAttributes().containsKey(TRANSMISSION_FREQUENCY_ATTR)) {
-            transmissionFrequency = device.getInteger(TRANSMISSION_FREQUENCY_ATTR);
+            if (device.getAttributes().containsKey(TRANSMISSION_FREQUENCY_ATTR)) {
+                transmissionFrequency = device.getInteger(TRANSMISSION_FREQUENCY_ATTR);
+            }
+        } catch(Exception e){
+            e.printStackTrace();
+            Log.debug("CAUGHT DEVICE INFO: " + device.getId() + " " + device.getAttributes());
         }
     }
 
