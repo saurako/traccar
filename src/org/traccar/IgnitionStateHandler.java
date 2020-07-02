@@ -90,11 +90,11 @@ public class IgnitionStateHandler extends BaseDataHandler {
 
             // No data loss & we have last position. Calculate ignition state, and then run time.
 
-            int upperChangeThreshold = device.getInteger(IGNITION_ON_CHANGE_THRESHOLD);
-            int lowerChangeThreshold = device.getInteger(IGNITION_OFF_CHANGE_THRESHOLD);
+            int upperChangeThreshold = device.getInteger(IGNITION_ON_CHANGE_THRESHOLD) * 1000;
+            int lowerChangeThreshold = device.getInteger(IGNITION_OFF_CHANGE_THRESHOLD) * 1000;
 
-            int upperThreshold = device.getInteger(BATTERY_UPPER_MILLI_VOLTS_THRESHOLD_FIELD_NAME);
-            int lowerThreshold = device.getInteger(BATTERY_LOWER_MILLI_VOLTS_THRESHOLD_FIELD_NAME);
+            int upperThreshold = device.getInteger(BATTERY_UPPER_MILLI_VOLTS_THRESHOLD_FIELD_NAME) * 1000;
+            int lowerThreshold = device.getInteger(BATTERY_LOWER_MILLI_VOLTS_THRESHOLD_FIELD_NAME) * 1000;
 
             // TRUE MEANS THAT THERE IS FLUCTUATIONS IN THE EXT VOLTAGE WHEN THE ENGINE IS ON
             // Note: Absent defaults to false.
