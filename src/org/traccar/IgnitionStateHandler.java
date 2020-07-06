@@ -36,9 +36,8 @@ public class IgnitionStateHandler extends BaseDataHandler {
 
     @Override
     protected Position handlePosition(Position position) {
+        long deviceId = position.getDeviceId();
         try {
-            long deviceId = position.getDeviceId();
-
             if (Context.getDeviceManager() == null) {
                 return position;
             }
@@ -112,21 +111,31 @@ public class IgnitionStateHandler extends BaseDataHandler {
             // else the voltage is lower then the lower ext voltage threshold, so it is off
 
             int voltageChangeValue = maybeCurrentVoltage.get() - lastPositionCurrentVoltage.get();
-            if (voltageChangeValue > upperChangeThreshold || distance > MIN_DISTANCE) {
+
+            // Spike - motion is not required for this.
+            if (maybeCurrentVoltage.get() > upperThreshold
+                    && voltageChangeValue > upperChangeThreshold) {
                 position.set(Position.KEY_CALCULATED_IGNITION, true);
-            } else if (!fluctuationInVoltageWhenOn && voltageChangeValue < lowerChangeThreshold) {
-                // check for lowerChangeThreshold only if fluctuations in ext voltage when unit is on is false, i.e. voltage is stable
-                position.set(Position.KEY_CALCULATED_IGNITION, false);
-            } else if (maybeCurrentVoltage.get() > upperThreshold) {
-                position.set(Position.KEY_CALCULATED_IGNITION, true);
-            } else if ((maybeCurrentVoltage.get() <= upperThreshold
+            } else if (distance > MIN_DISTANCE ||
+                    (maybeCurrentVoltage.get() <= upperThreshold
                             && maybeCurrentVoltage.get() >= lowerThreshold)) {
                 // Carry forward the previous value, if present.
                 if (lastPosition.getAttributes().containsKey(Position.KEY_CALCULATED_IGNITION)) {
                     position.set(Position.KEY_CALCULATED_IGNITION, lastPosition.getBoolean(Position.KEY_CALCULATED_IGNITION));
                 }
 
-            } else if (maybeCurrentVoltage.get() < lowerThreshold) {
+            } else if (fluctuationInVoltageWhenOn) {
+                if (maybeCurrentVoltage.get() < lowerThreshold && voltageChangeValue > lowerChangeThreshold) { // Change is not enough, carry forward.
+                    if (lastPosition.getAttributes().containsKey(Position.KEY_CALCULATED_IGNITION)) {
+                        position.set(Position.KEY_CALCULATED_IGNITION, lastPosition.getBoolean(Position.KEY_CALCULATED_IGNITION));
+                    }
+                } else if (maybeCurrentVoltage.get() < lowerThreshold && voltageChangeValue < lowerChangeThreshold) { // Enough change to trigger off.
+                    position.set(Position.KEY_CALCULATED_IGNITION, false);
+                }
+            }
+
+            // Normal off, we've dropped below the lower threshold.
+            else if (maybeCurrentVoltage.get() < lowerThreshold && voltageChangeValue > lowerChangeThreshold) {
                 position.set(Position.KEY_CALCULATED_IGNITION, false);
             }
 
@@ -151,7 +160,8 @@ public class IgnitionStateHandler extends BaseDataHandler {
 
             determineRunTimeFromState(position, lastPosition);
         } catch (Exception e) {
-            Log.info("Exception while calculating ignition state.");
+            Log.info("Exception while calculating ignition state for deviceid " + deviceId);
+
             e.printStackTrace();
         }
         return position;
