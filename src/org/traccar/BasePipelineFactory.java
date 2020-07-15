@@ -47,6 +47,7 @@ import org.traccar.processing.ComputedAttributesHandler;
 import org.traccar.processing.CopyAttributesHandler;
 import org.traccar.processing.peripheralsensorprocessors.fuelsensorprocessors.FuelDataCalibrationHandler;
 import org.traccar.processing.peripheralsensorprocessors.fuelsensorprocessors.FuelSensorDataHandler;
+import org.traccar.processing.peripheralsensorprocessors.fuelsensorprocessors.InfluxStreamHandler;
 
 import java.net.InetSocketAddress;
 
@@ -68,6 +69,7 @@ public abstract class BasePipelineFactory implements ChannelPipelineFactory {
     private RunningTimeHandler runningTimeHandler;
     private FuelDataCalibrationHandler fuelDataCalibrationHandler;
     private FuelSensorDataHandler fuelSensorDataHandler;
+    private InfluxStreamHandler influxStreamHandler;
 
     private CommandResultEventHandler commandResultEventHandler;
     private OverspeedEventHandler overspeedEventHandler;
@@ -187,6 +189,7 @@ public abstract class BasePipelineFactory implements ChannelPipelineFactory {
             runningTimeHandler = new RunningTimeHandler();
             fuelDataCalibrationHandler = new FuelDataCalibrationHandler();
             fuelSensorDataHandler = new FuelSensorDataHandler(protocol);
+            influxStreamHandler = new InfluxStreamHandler();
         }
 
         if (Context.getConfig().getBoolean("event.enable")) {
@@ -273,6 +276,10 @@ public abstract class BasePipelineFactory implements ChannelPipelineFactory {
 
         if (fuelSensorDataHandler != null) {
             pipeline.addLast("peripheralSensorData", fuelSensorDataHandler);
+        }
+
+        if (influxStreamHandler != null) {
+            pipeline.addLast("influxStreamWriter", influxStreamHandler);
         }
 
         if (Context.getDataManager() != null) {

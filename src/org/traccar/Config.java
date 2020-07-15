@@ -15,6 +15,8 @@
  */
 package org.traccar;
 
+import org.traccar.helper.Log;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,8 +29,20 @@ public class Config {
 
     private boolean useEnvironmentVariables;
 
+    private String configFileName;
+
+    public void load() throws IOException {
+        if (configFileName != null) {
+            load(configFileName);
+        }
+        else {
+            Log.debug("Cannot refresh config because file name is not set.");
+        }
+    }
+
     void load(String file) throws IOException {
         try {
+
             Properties mainProperties = new Properties();
             try (InputStream inputStream = new FileInputStream(file)) {
                 mainProperties.loadFromXML(inputStream);
@@ -45,6 +59,8 @@ public class Config {
 
             useEnvironmentVariables = Boolean.parseBoolean(System.getenv("CONFIG_USE_ENVIRONMENT_VARIABLES"))
                     || Boolean.parseBoolean(properties.getProperty("config.useEnvironmentVariables"));
+
+            configFileName = file;
         } catch (InvalidPropertiesFormatException e) {
             throw new RuntimeException("Configuration file is not a valid XML document", e);
         }
@@ -105,4 +121,11 @@ public class Config {
         properties.put(key, value);
     }
 
+    public String getConfigFileName() {
+        return configFileName;
+    }
+
+    public void setConfigFileName(final String configFileName) {
+        this.configFileName = configFileName;
+    }
 }

@@ -188,6 +188,11 @@
             <artifactId>json</artifactId>
             <version>20171018</version>
         </dependency>
+        <dependency>
+            <groupId>com.influxdb</groupId>
+            <artifactId>influxdb-client-java</artifactId>
+            <version>1.9.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -296,7 +301,7 @@
                         <configuration>
                             <rules>
                                 <enforceBytecodeVersion>
-                                    <maxJdkVersion>1.8</maxJdkVersion>
+                                    <maxJdkVersion>1.9</maxJdkVersion>
                                     <ignoreClasses>
                                         <ignoreClass>*JDBC42*</ignoreClass>
                                     </ignoreClasses>
