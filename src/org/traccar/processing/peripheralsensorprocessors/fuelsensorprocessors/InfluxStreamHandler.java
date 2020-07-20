@@ -80,6 +80,7 @@ public class InfluxStreamHandler extends BaseDataHandler {
     @NotNull
     private void writeToInflux(final Position position) {
         final String databaseName = getInfluxDBName(position);
+        final double multiplier = position.getProtocol().equalsIgnoreCase("aquila")? 1.0 : 1000;
 
         try {
             WriteApi writeApi = getWriteAPIForDevice(databaseName);
@@ -88,8 +89,8 @@ public class InfluxStreamHandler extends BaseDataHandler {
             writeApi.writeMeasurement(WritePrecision.MS, geoLocation);
 
             getCalibratedFuelLevel(position, deviceTime).ifPresent(c -> writeApi.writeMeasurement(WritePrecision.MS, c));
-            getExternalBatteryVoltage(position, deviceTime).ifPresent(e -> writeApi.writeMeasurement(WritePrecision.MS, e));
-            getInternalBatteryVoltage(position, deviceTime).ifPresent(i -> writeApi.writeMeasurement(WritePrecision.MS, i));
+            getExternalBatteryVoltage(position, deviceTime, multiplier).ifPresent(e -> writeApi.writeMeasurement(WritePrecision.MS, e));
+            getInternalBatteryVoltage(position, deviceTime, multiplier).ifPresent(i -> writeApi.writeMeasurement(WritePrecision.MS, i));
         } catch (final NotFoundException e) {
             Log.debug(String.format("Influx db not found for %s. Please make sure it exists. Skipping current data point.", databaseName));
         }
@@ -97,7 +98,7 @@ public class InfluxStreamHandler extends BaseDataHandler {
 
     private String getInfluxDBName(final Position position) {
         final Device device = Context.getDeviceManager().getById(position.getDeviceId());
-        return String.format("%s",  device.getUniqueId());
+        return String.format("%d_%s", device.getId(), device.getUniqueId());
     }
 
     private WriteApi getWriteAPIForDevice(final String databaseName) {
@@ -129,22 +130,22 @@ public class InfluxStreamHandler extends BaseDataHandler {
                 });
     }
 
-    private Optional<InternalBatteryVoltage> getInternalBatteryVoltage(final Position position, final Instant deviceTime) {
+    private Optional<InternalBatteryVoltage> getInternalBatteryVoltage(final Position position, final Instant deviceTime, final double multiplier) {
         return getValue(position, Position.KEY_BATTERY)
                 .map(level -> {
                     InternalBatteryVoltage internalBatteryVoltage = new InternalBatteryVoltage();
                     internalBatteryVoltage.deviceTime = deviceTime;
-                    internalBatteryVoltage.milliVolts = (Integer) level * 1.0;
+                    internalBatteryVoltage.milliVolts = ((Number) level).doubleValue() * multiplier;
                     return internalBatteryVoltage;
                 });
     }
 
-    private Optional<ExternalBatteryVoltage> getExternalBatteryVoltage(final Position position, final Instant deviceTime) {
+    private Optional<ExternalBatteryVoltage> getExternalBatteryVoltage(final Position position, final Instant deviceTime, final double multiplier) {
         return getValue(position, Position.KEY_POWER)
                 .map(level -> {
                     ExternalBatteryVoltage externalBatteryVoltage = new ExternalBatteryVoltage();
                     externalBatteryVoltage.deviceTime = deviceTime;
-                    externalBatteryVoltage.milliVolts = (Integer) level * 1.0;
+                    externalBatteryVoltage.milliVolts =  ((Number) level).doubleValue() * multiplier;
                     return externalBatteryVoltage;
                 });
     }
