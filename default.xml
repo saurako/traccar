@@ -204,10 +204,47 @@
         ORDER BY fixTime
     </entry>
 
+    <entry key='database.positionsForRouteSinceLastFill'>
+        SELECT deviceid, fixtime as devicetime, latitude, longitude, speed, course, attributes
+        FROM positions
+        WHERE deviceId = :deviceId
+        AND id >= (
+            SELECT positionid
+            FROM events
+            WHERE deviceid = :deviceId
+            AND type = 'fuelFill'
+            AND JSON_EXTRACT(attributes, "$.volume") > 20
+            and devicetime >= (CURDATE() - INTERVAL 30 DAY)
+            order by id desc
+            limit 1
+        )
+        AND fixTime BETWEEN :from AND :to
+        AND valid = true
+        ORDER BY fixTime
+    </entry>
+
     <entry key='database.selectPositionsForFuel'>
         SELECT deviceid, fixtime as devicetime, attributes
         FROM positions
         WHERE deviceId = :deviceId
+        AND fixTime BETWEEN :from AND :to
+        ORDER BY fixTime
+    </entry>
+
+    <entry key='database.selectPositionsForFuelSinceLastFill'>
+        SELECT deviceid, fixtime as devicetime, attributes
+        FROM positions
+        WHERE deviceId = :deviceId
+        AND id >= (
+            SELECT positionid
+            FROM events
+            WHERE deviceid = :deviceId
+            AND type = 'fuelFill'
+            AND JSON_EXTRACT(attributes, "$.volume") > 20
+            and devicetime >= (CURDATE() - INTERVAL 30 DAY)
+            order by id desc
+            limit 1
+        )
         AND fixTime BETWEEN :from AND :to
         ORDER BY fixTime
     </entry>
@@ -217,6 +254,33 @@
         FROM positions AS a,
         (
             SELECT MIN(id) AS mini, MAX(id) AS maxi
+            FROM positions
+            WHERE deviceId = :deviceId
+            AND attributes NOT LIKE :unitsFilter
+            AND fixTime BETWEEN :from AND :to
+            ORDER BY fixtime
+        ) AS m
+        WHERE  m.maxi = a.id
+        OR m.mini = a.id
+        ORDER BY a.id
+    </entry>
+
+    <entry key='database.positionsSinceLastFill'>
+        SELECT a.*
+        FROM positions AS a,
+        (
+            SELECT
+                (
+                    SELECT positionid
+                    FROM events
+                    WHERE deviceid = :deviceId
+                    AND type = 'fuelFill'
+                    AND JSON_EXTRACT(attributes, "$.volume") > 20
+                    and devicetime >= (CURDATE() - INTERVAL 30 DAY)
+                    order by id desc
+                    limit 1
+                ) AS mini,
+            MAX(id) AS maxi
             FROM positions
             WHERE deviceId = :deviceId
             AND attributes NOT LIKE :unitsFilter
@@ -262,7 +326,24 @@
     </entry>
 
     <entry key='database.selectEvents'>
-        SELECT * FROM events WHERE deviceId = :deviceId AND serverTime BETWEEN :from AND :to ORDER BY serverTime
+        SELECT * FROM events WHERE deviceId = :deviceId AND devicetime BETWEEN :from AND :to ORDER BY serverTime
+    </entry>
+
+    <entry key='database.selectEventsSinceLastFill'>
+        SELECT *
+        FROM events
+        WHERE deviceId = :deviceId
+        AND id >= (
+            SELECT id
+            FROM events
+            WHERE deviceid = :deviceId
+            AND type = 'fuelFill'
+            AND JSON_EXTRACT(attributes, "$.volume") > 20
+            and devicetime >= (CURDATE() - INTERVAL 30 DAY)
+            order by id desc
+            limit 1
+        )
+        AND devicetime BETWEEN :from AND :to ORDER BY devicetime
     </entry>
 
     <entry key='database.selectGeofencesAll'>
@@ -385,7 +466,7 @@
         INSERT INTO statistics (captureTime, activeUsers, activeDevices, requests, messagesReceived, messagesStored, mailSent, smsSent, geocoderRequests, geolocationRequests, attributes)
         VALUES (:captureTime, :activeUsers, :activeDevices, :requests, :messagesReceived, :messagesStored, :mailSent, :smsSent, :geocoderRequests, :geolocationRequests, :attributes)
     </entry>
-    
+
     <entry key='database.selectCalendarsAll'>
         SELECT * FROM calendars
     </entry>
@@ -418,7 +499,7 @@
     <entry key='database.unlinkCalendar'>
         DELETE FROM user_calendar WHERE userId = :userId AND calendarId = :calendarId
     </entry>
-    
+
     <entry key='database.selectUserPermissions'>
         SELECT userId, managedUserId FROM user_user
     </entry>
@@ -452,7 +533,7 @@
     <entry key='database.deleteAttribute'>
         DELETE FROM attributes WHERE id = :id
     </entry>
-    
+
         <entry key='database.selectAttributePermissions'>
         SELECT userId, attributeId FROM user_attribute
     </entry>
@@ -509,7 +590,7 @@
     <entry key='database.deleteDriver'>
         DELETE FROM drivers WHERE id = :id
     </entry>
-    
+
     <entry key='database.selectDriverPermissions'>
         SELECT userId, driverId FROM user_driver
     </entry>

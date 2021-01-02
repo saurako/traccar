@@ -38,18 +38,31 @@ import org.traccar.reports.model.DeviceReport;
 
 public final class Events {
 
+    public static final String IS_TRUE_POSITIVE = "isTruePositive";
+
     private Events() {
     }
 
-    public static Collection<Event> getObjects(long userId, Collection<Long> deviceIds, Collection<Long> groupIds,
-            Collection<String> types, Date from, Date to) throws SQLException {
+    public static Collection<Event> getObjects(long userId,
+                                               Collection<Long> deviceIds,
+                                               Collection<Long> groupIds,
+                                               Collection<String> types,
+                                               Date from,
+                                               Date to,
+                                               boolean sinceLastFill) throws SQLException {
         ReportUtils.checkPeriodLimit(from, to);
         ArrayList<Event> result = new ArrayList<>();
         for (long deviceId: ReportUtils.getDeviceList(deviceIds, groupIds)) {
             Context.getPermissionsManager().checkDevice(userId, deviceId);
-            Collection<Event> events = Context.getDataManager().getEvents(deviceId, from, to);
+            Collection<Event> events = Context.getDataManager().getEvents(deviceId, from, to, sinceLastFill);
             boolean all = types.isEmpty() || types.contains(Event.ALL_EVENTS);
             for (Event event : events) {
+                if (event.getAttributes().containsKey(IS_TRUE_POSITIVE)
+                    && event.getBoolean(IS_TRUE_POSITIVE) == false) { // Being explicit here, to OMIT everything that
+                    // is isTruePositive == false.
+                    continue;
+                }
+
                 if (all || types.contains(event.getType())) {
                     long geofenceId = event.getGeofenceId();
                     long maintenanceId = event.getMaintenanceId();
@@ -74,7 +87,7 @@ public final class Events {
         HashMap<Long, String> maintenanceNames = new HashMap<>();
         for (long deviceId: ReportUtils.getDeviceList(deviceIds, groupIds)) {
             Context.getPermissionsManager().checkDevice(userId, deviceId);
-            Collection<Event> events = Context.getDataManager().getEvents(deviceId, from, to);
+            Collection<Event> events = Context.getDataManager().getEvents(deviceId, from, to, false);
             boolean all = types.isEmpty() || types.contains(Event.ALL_EVENTS);
             for (Iterator<Event> iterator = events.iterator(); iterator.hasNext();) {
                 Event event = iterator.next();
