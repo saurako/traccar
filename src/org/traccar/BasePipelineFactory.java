@@ -47,6 +47,7 @@ import org.traccar.processing.ComputedAttributesHandler;
 import org.traccar.processing.CopyAttributesHandler;
 import org.traccar.processing.peripheralsensorprocessors.fuelsensorprocessors.FuelDataCalibrationHandler;
 import org.traccar.processing.peripheralsensorprocessors.fuelsensorprocessors.FuelSensorDataHandler;
+import org.traccar.processing.peripheralsensorprocessors.fuelsensorprocessors.InfluxStreamHandler;
 
 import java.net.InetSocketAddress;
 
@@ -64,10 +65,11 @@ public abstract class BasePipelineFactory implements ChannelPipelineFactory {
     private HemisphereHandler hemisphereHandler;
     private CopyAttributesHandler copyAttributesHandler;
     private ComputedAttributesHandler computedAttributesHandler;
-    private IgnitionStateHandler ignitionStateHandler;
+//    private IgnitionStateHandler ignitionStateHandler;
     private RunningTimeHandler runningTimeHandler;
     private FuelDataCalibrationHandler fuelDataCalibrationHandler;
     private FuelSensorDataHandler fuelSensorDataHandler;
+    private InfluxStreamHandler influxStreamHandler;
 
     private CommandResultEventHandler commandResultEventHandler;
     private OverspeedEventHandler overspeedEventHandler;
@@ -183,10 +185,11 @@ public abstract class BasePipelineFactory implements ChannelPipelineFactory {
 //        }
 
         if (Context.getConfig().getBoolean("processing.peripheralSensorData.enable")) {
-            ignitionStateHandler = new IgnitionStateHandler();
+//            ignitionStateHandler = new IgnitionStateHandler();
             runningTimeHandler = new RunningTimeHandler();
             fuelDataCalibrationHandler = new FuelDataCalibrationHandler();
             fuelSensorDataHandler = new FuelSensorDataHandler(protocol);
+            influxStreamHandler = new InfluxStreamHandler();
         }
 
         if (Context.getConfig().getBoolean("event.enable")) {
@@ -258,9 +261,9 @@ public abstract class BasePipelineFactory implements ChannelPipelineFactory {
             pipeline.addLast("computedAttributes", computedAttributesHandler);
         }
 
-        if (ignitionStateHandler != null) {
-            pipeline.addLast("ignitionStateHandler", ignitionStateHandler);
-        }
+//        if (ignitionStateHandler != null) {
+//            pipeline.addLast("ignitionStateHandler", ignitionStateHandler);
+//        }
 
         if (runningTimeHandler != null) {
             pipeline.addLast("runningTimeHandler", runningTimeHandler);
@@ -273,6 +276,10 @@ public abstract class BasePipelineFactory implements ChannelPipelineFactory {
 
         if (fuelSensorDataHandler != null) {
             pipeline.addLast("peripheralSensorData", fuelSensorDataHandler);
+        }
+
+        if (influxStreamHandler != null) {
+            pipeline.addLast("influxStreamWriter", influxStreamHandler);
         }
 
         if (Context.getDataManager() != null) {

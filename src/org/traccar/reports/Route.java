@@ -41,14 +41,14 @@ public final class Route {
     }
 
     public static Collection<Position> getObjects(long userId, Collection<Long> deviceIds, Collection<Long> groupIds,
-            Date from, Date to) throws SQLException {
+            Date from, Date to, boolean sinceLastFill) throws SQLException {
 
         ReportUtils.checkPeriodLimit(from, to);
         ArrayList<Position> result = new ArrayList<>();
 
         for (long deviceId: ReportUtils.getDeviceList(deviceIds, groupIds)) {
             Context.getPermissionsManager().checkDevice(userId, deviceId);
-            Collection<Position> routePositions = Context.getDataManager().getPositionsForRoute(deviceId, from, to);
+            Collection<Position> routePositions = Context.getDataManager().getPositionsForRoute(deviceId, from, to, sinceLastFill);
             List<Position> filteredRoutePositions =
                     routePositions.stream().filter(Route::positionFilter).collect(Collectors.toList());
 
@@ -73,12 +73,13 @@ public final class Route {
 
     public static Collection<Position> getFuelObjects(long userId, Collection<Long> deviceIds,
                                                       Collection<Long> groupIds,
-                                                      Date from, Date to) throws SQLException {
+                                                      Date from, Date to,
+                                                      final boolean sinceLastFill) throws SQLException {
         ReportUtils.checkPeriodLimit(from, to);
         ArrayList<Position> fuelOnlyPositions = new ArrayList<>();
         for (long deviceId: ReportUtils.getDeviceList(deviceIds, groupIds)) {
             Context.getPermissionsManager().checkDevice(userId, deviceId);
-            fuelOnlyPositions.addAll(Context.getDataManager().getPositionsForFuel(deviceId, from, to));
+            fuelOnlyPositions.addAll(Context.getDataManager().getPositionsForFuel(deviceId, from, to, sinceLastFill));
         }
 
         String deviceIdsString = deviceIds.stream().map(d -> d.toString()).collect(Collectors.joining(","));
@@ -128,14 +129,16 @@ public final class Route {
     public static Collection<Position> getSummaryObjects(long userId, Collection<Long> deviceIds,
                                                          Collection<Long> groupIds,
                                                          Date from,
-                                                         Date to) throws SQLException {
+                                                         Date to,
+                                                         boolean sinceLastFill) throws SQLException {
         ReportUtils.checkPeriodLimit(from, to);
         ArrayList<Position> result = new ArrayList<>();
+
         for (long deviceId: ReportUtils.getDeviceList(deviceIds, groupIds)) {
             Context.getPermissionsManager().checkDevice(userId, deviceId);
-
-            result.addAll(Context.getDataManager().getPositionsForSummary(deviceId, from, to));
+            result.addAll(Context.getDataManager().getPositionsForSummary(deviceId, from, to, sinceLastFill));
         }
+
         return result;
     }
 

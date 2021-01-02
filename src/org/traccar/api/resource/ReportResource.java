@@ -40,18 +40,23 @@ public class ReportResource extends BaseResource {
     @Path("route")
     @GET
     public Collection<Position> getRoute(
-            @QueryParam("deviceId") final List<Long> deviceIds, @QueryParam("groupId") final List<Long> groupIds,
-            @QueryParam("from") String from, @QueryParam("to") String to) throws SQLException {
+            @QueryParam("deviceId") final List<Long> deviceIds,
+            @QueryParam("groupId") final List<Long> groupIds,
+            @QueryParam("from") String from,
+            @QueryParam("to") String to,
+            @QueryParam("sinceLastFill") boolean sinceLastFill) throws SQLException {
         return Route.getObjects(getUserId(), deviceIds, groupIds,
-                DateUtil.parseDate(from), DateUtil.parseDate(to));
+                DateUtil.parseDate(from), DateUtil.parseDate(to), sinceLastFill);
     }
 
     @Path("route")
     @GET
     @Produces(XLSX)
     public Response getRouteExcel(
-            @QueryParam("deviceId") final List<Long> deviceIds, @QueryParam("groupId") final List<Long> groupIds,
-            @QueryParam("from") String from, @QueryParam("to") String to) throws SQLException, IOException {
+            @QueryParam("deviceId") final List<Long> deviceIds,
+            @QueryParam("groupId") final List<Long> groupIds,
+            @QueryParam("from") String from,
+            @QueryParam("to") String to) throws SQLException, IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Route.getExcel(stream, getUserId(), deviceIds, groupIds,
                 DateUtil.parseDate(from), DateUtil.parseDate(to));
@@ -63,35 +68,54 @@ public class ReportResource extends BaseResource {
     @Path("fuel")
     @GET
     public Collection<Position> getFuel(
-            @QueryParam("deviceId") final List<Long> deviceIds, @QueryParam("groupId") final List<Long> groupIds,
-            @QueryParam("from") String from, @QueryParam("to") String to) throws SQLException {
-        Collection<Position> result = Route.getFuelObjects(getUserId(), deviceIds, groupIds,
-                DateUtil.parseDate(from), DateUtil.parseDate(to));
+            @QueryParam("deviceId") final List<Long> deviceIds,
+            @QueryParam("groupId") final List<Long> groupIds,
+            @QueryParam("from") String from,
+            @QueryParam("to") String to,
+            @QueryParam("sinceLastFill") boolean sinceLastFill) throws SQLException {
+        Collection<Position> result =
+                Route.getFuelObjects(getUserId(),
+                                     deviceIds,
+                                     groupIds,
+                                     DateUtil.parseDate(from),
+                                     DateUtil.parseDate(to),
+                                     sinceLastFill);
         return result;
     }
 
     @Path("mileage")
     @GET
     public Collection<Position> getMileage(
-            @QueryParam("deviceId") final List<Long> deviceIds, @QueryParam("groupId") final List<Long> groupIds,
-            @QueryParam("from") String from, @QueryParam("to") String to) throws SQLException {
+            @QueryParam("deviceId") final List<Long> deviceIds,
+            @QueryParam("groupId") final List<Long> groupIds,
+            @QueryParam("from") String from,
+            @QueryParam("to") String to,
+            @QueryParam("sinceLastFill") boolean sinceLastFill) throws SQLException {
 
         long userid = getUserId();
         Date fromDate = DateUtil.parseDate(from);
         Date endDate = DateUtil.parseDate(to);
 
-        Collection<Position> result = Route.getSummaryObjects(userid, deviceIds, groupIds, fromDate, endDate);
+        Collection<Position> result =
+                Route.getSummaryObjects(userid, deviceIds, groupIds, fromDate, endDate, sinceLastFill);
         return result;
     }
 
     @Path("events")
     @GET
     public Collection<Event> getEvents(
-            @QueryParam("deviceId") final List<Long> deviceIds, @QueryParam("groupId") final List<Long> groupIds,
+            @QueryParam("deviceId") final List<Long> deviceIds,
+            @QueryParam("groupId") final List<Long> groupIds,
             @QueryParam("type") final List<String> types,
-            @QueryParam("from") String from, @QueryParam("to") String to) throws SQLException {
-        return Events.getObjects(getUserId(), deviceIds, groupIds, types,
-                DateUtil.parseDate(from), DateUtil.parseDate(to));
+            @QueryParam("from") String from,
+            @QueryParam("to") String to,
+            @QueryParam("sinceLastFill") boolean sinceLastFill) throws SQLException {
+        return Events.getObjects(getUserId(),
+                                 deviceIds, groupIds,
+                                 types,
+                                 DateUtil.parseDate(from),
+                                 DateUtil.parseDate(to),
+                                 sinceLastFill);
     }
 
     @Path("events")

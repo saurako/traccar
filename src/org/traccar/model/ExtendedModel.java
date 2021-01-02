@@ -15,6 +15,8 @@
  */
 package org.traccar.model;
 
+import org.eclipse.jetty.util.StringUtil;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -93,9 +95,14 @@ public class ExtendedModel extends BaseModel {
     }
 
     public double getDouble(String key) {
-        if (attributes.containsKey(key)) {
-            return ((Number) attributes.get(key)).doubleValue();
-        } else {
+        try {
+            if (attributes != null && attributes.containsKey(key) && !attributes.get(key).equals("null")) {
+                return ((Number) attributes.get(key)).doubleValue();
+            } else {
+                return 0.0;
+            }
+        }
+        catch (Exception e) {
             return 0.0;
         }
     }

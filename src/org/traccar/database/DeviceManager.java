@@ -15,6 +15,7 @@
  */
 package org.traccar.database;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -76,6 +77,12 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
         if ((force || System.currentTimeMillis() - lastUpdate > dataRefreshDelay)
                 && devicesLastUpdate.compareAndSet(lastUpdate, System.currentTimeMillis())) {
             refreshItems();
+            try {
+                Context.getConfig().load();
+            } catch (IOException e) {
+                Log.debug("Exception while refreshing config file.");
+                e.printStackTrace();
+            }
         }
     }
 

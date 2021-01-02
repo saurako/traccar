@@ -102,7 +102,8 @@ public class DataManager {
 
             dataSource = (DataSource) new InitialContext().lookup(jndiName);
 
-        } else {
+        }
+        else {
 
             String driverFile = config.getString("database.driverFile");
             if (driverFile != null) {
@@ -153,16 +154,18 @@ public class DataManager {
                     boolean skip;
                     if (extended) {
                         skip = !method.isAnnotationPresent(QueryExtended.class);
-                    } else {
+                    }
+                    else {
                         skip = method.isAnnotationPresent(QueryIgnore.class)
-                                || method.isAnnotationPresent(QueryExtended.class) && !action.equals(ACTION_INSERT);
+                               || method.isAnnotationPresent(QueryExtended.class) && !action.equals(ACTION_INSERT);
                     }
                     if (!skip && method.getName().startsWith("get") && method.getParameterTypes().length == 0) {
                         String name = Introspector.decapitalize(method.getName().substring(3));
                         if (action.equals(ACTION_INSERT)) {
                             fields.append(name).append(", ");
                             values.append(":").append(name).append(", ");
-                        } else {
+                        }
+                        else {
                             fields.append(name).append(" = :").append(name).append(", ");
                         }
                     }
@@ -173,7 +176,8 @@ public class DataManager {
                     result.append("INSERT INTO ").append(getObjectsTableName(clazz)).append(" (");
                     result.append(fields).append(") ");
                     result.append("VALUES (").append(values).append(")");
-                } else {
+                }
+                else {
                     result.append("UPDATE ").append(getObjectsTableName(clazz)).append(" SET ");
                     result.append(fields);
                     result.append(" WHERE id = :id");
@@ -194,15 +198,15 @@ public class DataManager {
         switch (action) {
             case ACTION_SELECT_ALL:
                 return "SELECT " + makeNameId(owner) + ", " + makeNameId(property) + " FROM "
-                        + getPermissionsTableName(owner, property);
+                       + getPermissionsTableName(owner, property);
             case ACTION_INSERT:
                 return "INSERT INTO " + getPermissionsTableName(owner, property)
-                        + " (" + makeNameId(owner) + ", " + makeNameId(property) + ") VALUES (:"
-                        + makeNameId(owner) + ", :" + makeNameId(property) + ")";
+                       + " (" + makeNameId(owner) + ", " + makeNameId(property) + ") VALUES (:"
+                       + makeNameId(owner) + ", :" + makeNameId(property) + ")";
             case ACTION_DELETE:
                 return "DELETE FROM " + getPermissionsTableName(owner, property)
-                        + " WHERE " + makeNameId(owner) + " = :" + makeNameId(owner)
-                        + " AND " + makeNameId(property) + " = :" + makeNameId(property);
+                       + " WHERE " + makeNameId(owner) + " = :" + makeNameId(owner)
+                       + " AND " + makeNameId(property) + " = :" + makeNameId(property);
             default:
                 throw new IllegalArgumentException("Unknown action");
         }
@@ -224,7 +228,8 @@ public class DataManager {
         String queryName;
         if (action.equals(ACTION_SELECT_ALL)) {
             queryName = "database.select" + clazz.getSimpleName() + "s";
-        } else {
+        }
+        else {
             queryName = "database." + action.toLowerCase() + clazz.getSimpleName();
             if (extended) {
                 queryName += "Extended";
@@ -235,7 +240,8 @@ public class DataManager {
             if (generateQueries) {
                 query = constructObjectQuery(action, clazz, extended);
                 config.setString(queryName, query);
-            } else {
+            }
+            else {
                 Log.info("Query not provided: " + queryName);
             }
         }
@@ -260,9 +266,10 @@ public class DataManager {
         if (query == null) {
             if (generateQueries) {
                 query = constructPermissionQuery(action, owner,
-                        property.equals(User.class) ? ManagedUser.class : property);
+                                                 property.equals(User.class) ? ManagedUser.class : property);
                 config.setString(queryName, query);
-            } else {
+            }
+            else {
                 Log.info("Query not provided: " + queryName);
             }
         }
@@ -313,15 +320,16 @@ public class DataManager {
 
     public User login(String email, String password) throws SQLException {
         User user = QueryBuilder.create(dataSource, getQuery("database.loginUser"))
-                .setString("email", email.trim())
-                .executeQuerySingle(User.class);
+                                .setString("email", email.trim())
+                                .executeQuerySingle(User.class);
         LdapProvider ldapProvider = Context.getLdapProvider();
         if (user != null) {
             if (ldapProvider != null && user.getLogin() != null && ldapProvider.login(user.getLogin(), password)
-                    || !forceLdap && user.isPasswordValid(password)) {
+                || !forceLdap && user.isPasswordValid(password)) {
                 return user;
             }
-        } else {
+        }
+        else {
             if (ldapProvider != null && ldapProvider.login(email, password)) {
                 user = ldapProvider.getUser(email);
                 Context.getUsersManager().addItem(user);
@@ -333,8 +341,8 @@ public class DataManager {
 
     public void updateDeviceStatus(Device device) throws SQLException {
         QueryBuilder.create(dataSource, getQuery(ACTION_UPDATE, Device.class, true))
-                .setObject(device)
-                .executeUpdate();
+                    .setObject(device)
+                    .executeUpdate();
     }
 
     public Collection<Position> getPositions(long deviceId, Date from, Date to) throws SQLException {
@@ -345,23 +353,34 @@ public class DataManager {
         return queryBuilder.executeQuery(Position.class);
     }
 
-    public Collection<Position> getLastValidPosition(long deviceId)throws SQLException {
+    public Collection<Position> getLastValidPosition(long deviceId) throws SQLException {
         QueryBuilder queryBuilder = QueryBuilder.create(dataSource, getQuery("database.getLastValidPosition"))
                                                 .setLong("deviceId", deviceId);
         return queryBuilder.executeQuery(Position.class);
     }
 
-    public Collection<Position> getPositionsForRoute(long deviceId, Date from, Date to) throws SQLException {
+    public Collection<Position> getPositionsForRoute(long deviceId, Date from, Date to, boolean sinceLastFill) throws SQLException {
 
-        QueryBuilder queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForRoute"))
-                                                .setLong("deviceId", deviceId)
-                                                .setDate("from", from)
-                                                .setDate("to", to);
+        QueryBuilder queryBuilder;
+        if (sinceLastFill) {
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.positionsForRouteSinceLastFill"))
+                                       .setLong("deviceId", deviceId)
+                                       .setDate("from", from)
+                                       .setDate("to", to);
+        }
+        else {
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForRoute"))
+                                       .setLong("deviceId", deviceId)
+                                       .setDate("from", from)
+                                       .setDate("to", to);
+
+        }
+
 
         return queryBuilder.executeQuery(Position.class);
     }
 
-    public Collection<Position> getPositionsForSummary(long deviceId, Date from, Date to) throws SQLException {
+    public Collection<Position> getPositionsForSummary(long deviceId, Date from, Date to, boolean sinceLastFill) throws SQLException {
 
         String deviceType = Context.getDeviceManager().getById(deviceId).getString("type");
         String deviceConsumptionType = Context.getDeviceManager().getDeviceConsumptionInfo(deviceId).getDeviceConsumptionType();
@@ -369,25 +388,46 @@ public class DataManager {
         String defaultFilter = "%\"totalDistance\":0.0%";
         if (StringUtil.isNotBlank(deviceType) && deviceType.equals("stationary")) {
             defaultFilter = "%\"totalIgnOnMillis\":0.0%";
-        } else if (deviceConsumptionType.equals("enginelesshourly")) {
+        }
+        else if (deviceConsumptionType.equals("enginelesshourly")) {
             defaultFilter = "";
         }
 
-        QueryBuilder queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForSummary"))
-                                                .setLong("deviceId", deviceId)
-                                                .setDate("from", from)
-                                                .setDate("to", to)
-                                                .setString("unitsFilter", defaultFilter);
+        final QueryBuilder queryBuilder;
 
-
+        if (sinceLastFill) {
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.positionsSinceLastFill"))
+                                       .setLong("deviceId", deviceId)
+                                       .setDate("from", from)
+                                       .setDate("to", to)
+                                       .setString("unitsFilter", defaultFilter);
+        }
+        else {
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForSummary"))
+                                       .setLong("deviceId", deviceId)
+                                       .setDate("from", from)
+                                       .setDate("to", to)
+                                       .setString("unitsFilter", defaultFilter);
+        }
         return queryBuilder.executeQuery(Position.class);
     }
 
-    public Collection<Position> getPositionsForFuel(long deviceId, Date from, Date to) throws SQLException {
-        QueryBuilder queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForFuel"))
-                                                .setLong("deviceId", deviceId)
-                                                .setDate("from", from)
-                                                .setDate("to", to);
+    public Collection<Position> getPositionsForFuel(long deviceId, Date from, Date to, boolean sinceLastFill) throws SQLException {
+        final QueryBuilder queryBuilder;
+        if (sinceLastFill) {
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForFuelSinceLastFill"))
+                                       .setLong("deviceId", deviceId)
+                                       .setDate("from", from)
+                                       .setDate("to", to)
+                                       .setBoolean("sinceLastFill", sinceLastFill);
+        }
+        else {
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForFuel"))
+                                       .setLong("deviceId", deviceId)
+                                       .setDate("from", from)
+                                       .setDate("to", to);
+        }
+
 
         Collection<Position> queryResult = queryBuilder.executeQuery(Position.class);
 
@@ -445,21 +485,21 @@ public class DataManager {
 
     public void addPosition(Position position) throws SQLException {
         position.setId(QueryBuilder.create(dataSource, getQuery(ACTION_INSERT, Position.class), true)
-                .setObject(position)
-                .setDate("serverTime", new Date())
-                .executeUpdate());
+                                   .setObject(position)
+                                   .setDate("serverTime", new Date())
+                                   .executeUpdate());
     }
 
     public void updateLatestPosition(Position position) throws SQLException {
         QueryBuilder.create(dataSource, getQuery("database.updateLatestPosition"))
-                .setDate("now", new Date())
-                .setObject(position)
-                .executeUpdate();
+                    .setDate("now", new Date())
+                    .setObject(position)
+                    .executeUpdate();
     }
 
     public Collection<Position> getLatestPositions() throws SQLException {
         return QueryBuilder.create(dataSource, getQuery("database.selectLatestPositions"))
-                .executeQuery(Position.class);
+                           .executeQuery(Position.class);
     }
 
     public Collection<Position> getLatestPositionsForProtocol(String protocol) throws SQLException {
@@ -474,32 +514,43 @@ public class DataManager {
             Date timeLimit = new Date(System.currentTimeMillis() - historyDays * 24 * 3600 * 1000);
             Log.debug("Clearing history earlier than " + new SimpleDateFormat(Log.DATE_FORMAT).format(timeLimit));
             QueryBuilder.create(dataSource, getQuery("database.deletePositions"))
-                    .setDate("serverTime", timeLimit)
-                    .executeUpdate();
+                        .setDate("serverTime", timeLimit)
+                        .executeUpdate();
             QueryBuilder.create(dataSource, getQuery("database.deleteEvents"))
-                    .setDate("serverTime", timeLimit)
-                    .executeUpdate();
+                        .setDate("serverTime", timeLimit)
+                        .executeUpdate();
         }
     }
 
     public Server getServer() throws SQLException {
         return QueryBuilder.create(dataSource, getQuery(ACTION_SELECT_ALL, Server.class))
-                .executeQuerySingle(Server.class);
+                           .executeQuerySingle(Server.class);
     }
 
-    public Collection<Event> getEvents(long deviceId, Date from, Date to) throws SQLException {
-        return QueryBuilder.create(dataSource, getQuery("database.selectEvents"))
-                .setLong("deviceId", deviceId)
-                .setDate("from", from)
-                .setDate("to", to)
-                .executeQuery(Event.class);
+    public Collection<Event> getEvents(long deviceId, Date from, Date to, boolean sinceLastFill) throws SQLException {
+
+        final QueryBuilder queryBuilder;
+        if (sinceLastFill) {
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectEventsSinceLastFill"))
+                                       .setLong("deviceId", deviceId)
+                                       .setDate("from", from)
+                                       .setDate("to", to);
+        }
+        else {
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectEvents"))
+                                       .setLong("deviceId", deviceId)
+                                       .setDate("from", from)
+                                       .setDate("to", to);
+        }
+
+        return queryBuilder.executeQuery(Event.class);
     }
 
     public Collection<Statistics> getStatistics(Date from, Date to) throws SQLException {
         return QueryBuilder.create(dataSource, getQuery("database.selectStatistics"))
-                .setDate("from", from)
-                .setDate("to", to)
-                .executeQuery(Statistics.class);
+                           .setDate("from", from)
+                           .setDate("to", to)
+                           .executeQuery(Statistics.class);
     }
 
     public static Class<?> getClassByName(String name) throws ClassNotFoundException {
@@ -539,49 +590,49 @@ public class DataManager {
     public Collection<Permission> getPermissions(Class<? extends BaseModel> owner, Class<? extends BaseModel> property)
             throws SQLException, ClassNotFoundException {
         return QueryBuilder.create(dataSource, getQuery(ACTION_SELECT_ALL, owner, property))
-                .executePermissionsQuery();
+                           .executePermissionsQuery();
     }
 
     public void linkObject(Class<?> owner, long ownerId, Class<?> property, long propertyId, boolean link)
             throws SQLException {
         QueryBuilder.create(dataSource, getQuery(link ? ACTION_INSERT : ACTION_DELETE, owner, property))
-                .setLong(makeNameId(owner), ownerId)
-                .setLong(makeNameId(property), propertyId)
-                .executeUpdate();
+                    .setLong(makeNameId(owner), ownerId)
+                    .setLong(makeNameId(property), propertyId)
+                    .executeUpdate();
     }
 
     public <T extends BaseModel> T getObject(Class<T> clazz, long entityId) throws SQLException {
         return QueryBuilder.create(dataSource, getQuery(ACTION_SELECT, clazz))
-                .setLong("id", entityId)
-                .executeQuerySingle(clazz);
+                           .setLong("id", entityId)
+                           .executeQuerySingle(clazz);
     }
 
     public <T extends BaseModel> Collection<T> getObjects(Class<T> clazz) throws SQLException {
         return QueryBuilder.create(dataSource, getQuery(ACTION_SELECT_ALL, clazz))
-                .executeQuery(clazz);
+                           .executeQuery(clazz);
     }
 
     public void addObject(BaseModel entity) throws SQLException {
         entity.setId(QueryBuilder.create(dataSource, getQuery(ACTION_INSERT, entity.getClass()), true)
-                .setObject(entity)
-                .executeUpdate());
+                                 .setObject(entity)
+                                 .executeUpdate());
     }
 
     public void updateObject(BaseModel entity) throws SQLException {
         QueryBuilder.create(dataSource, getQuery(ACTION_UPDATE, entity.getClass()))
-                .setObject(entity)
-                .executeUpdate();
-        if (entity instanceof User && ((User) entity).getHashedPassword() != null) {
-            QueryBuilder.create(dataSource, getQuery(ACTION_UPDATE, User.class, true))
                     .setObject(entity)
                     .executeUpdate();
+        if (entity instanceof User && ((User) entity).getHashedPassword() != null) {
+            QueryBuilder.create(dataSource, getQuery(ACTION_UPDATE, User.class, true))
+                        .setObject(entity)
+                        .executeUpdate();
         }
     }
 
     public void removeObject(Class<? extends BaseModel> clazz, long entityId) throws SQLException {
         QueryBuilder.create(dataSource, getQuery(ACTION_DELETE, clazz))
-                .setLong("id", entityId)
-                .executeUpdate();
+                    .setLong("id", entityId)
+                    .executeUpdate();
     }
 
     public Collection<Position> getLastPositionBefore(Position position) throws SQLException {

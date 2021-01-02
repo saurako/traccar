@@ -9,3 +9,5 @@ nbactions.xml
 .checkstyle
 test.jar
 README.txt
+*.class
+out
