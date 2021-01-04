@@ -57,8 +57,6 @@
         FROM events
         WHERE deviceid = :deviceId
         AND type = 'fuelFill'
-        AND JSON_EXTRACT(attributes, "$.volume") > 20
-        and devicetime >= (CURDATE() - INTERVAL 30 DAY)
         order by id desc
         limit 1
         )
@@ -75,19 +73,26 @@
         ORDER BY fixTime
     </entry>
 
+    <entry key="database.getLastFillPosition">
+        SELECT *
+        FROM events
+        WHERE deviceid = :deviceId
+        AND type = 'fuelFill'
+        order by id desc
+        limit 1
+    </entry>
+
     <entry key='database.selectPositionsForFuelSinceLastFill'>
         SELECT deviceid, fixtime as devicetime, attributes
         FROM positions
         WHERE deviceId = :deviceId
         AND id >= (
-        SELECT positionid
-        FROM events
-        WHERE deviceid = :deviceId
-        AND type = 'fuelFill'
-        AND JSON_EXTRACT(attributes, "$.volume") > 20
-        and devicetime >= (CURDATE() - INTERVAL 30 DAY)
-        order by id desc
-        limit 1
+            SELECT positionid
+            FROM events
+            WHERE deviceid = :deviceId
+            AND type = 'fuelFill'
+            order by id desc
+            limit 1
         )
         AND fixTime BETWEEN :from AND :to
         ORDER BY fixTime
@@ -144,8 +149,6 @@
             FROM events
             WHERE deviceid = :deviceId
             AND type = 'fuelFill'
-            AND JSON_EXTRACT(attributes, "$.volume") > 20
-            and devicetime >= (CURDATE() - INTERVAL 30 DAY)
             order by id desc
             limit 1
         ) AS mini,
@@ -217,8 +220,6 @@
             FROM events
             WHERE deviceid = :deviceId
             AND type = 'fuelFill'
-            AND JSON_EXTRACT(attributes, "$.volume") > 20
-            and devicetime >= (CURDATE() - INTERVAL 30 DAY)
             order by id desc
             limit 1
         )

@@ -25,9 +25,11 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import javax.management.Query;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
+import com.google.common.collect.Lists;
 import liquibase.Contexts;
 import liquibase.Liquibase;
 import liquibase.database.Database;
@@ -363,10 +365,16 @@ public class DataManager {
 
         QueryBuilder queryBuilder;
         if (sinceLastFill) {
+            QueryBuilder lastFillPosition = QueryBuilder.create(dataSource, getQuery("database.getLastFillPosition"))
+                                                        .setLong("deviceId", deviceId);
+
+            final Collection<Event> result = lastFillPosition.executeQuery(Event.class);
+            if (result.isEmpty()) {
+                return Lists.newArrayList();
+            }
+
             queryBuilder = QueryBuilder.create(dataSource, getQuery("database.positionsForRouteSinceLastFill"))
-                                       .setLong("deviceId", deviceId)
-                                       .setDate("from", from)
-                                       .setDate("to", to);
+                                       .setLong("deviceId", deviceId);
         }
         else {
             queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForRoute"))
@@ -396,9 +404,18 @@ public class DataManager {
         final QueryBuilder queryBuilder;
 
         if (sinceLastFill) {
+            QueryBuilder lastFillPosition = QueryBuilder.create(dataSource, getQuery("database.getLastFillPosition"))
+                                                        .setLong("deviceId", deviceId);
+
+            final Collection<Event> result = lastFillPosition.executeQuery(Event.class);
+            if (result.isEmpty()) {
+                return Lists.newArrayList();
+            }
+
+            final Event fill = result.iterator().next();
             queryBuilder = QueryBuilder.create(dataSource, getQuery("database.positionsSinceLastFill"))
                                        .setLong("deviceId", deviceId)
-                                       .setDate("from", from)
+                                       .setDate("from", fill.getDeviceTime())
                                        .setDate("to", to)
                                        .setString("unitsFilter", defaultFilter);
         }
@@ -415,9 +432,17 @@ public class DataManager {
     public Collection<Position> getPositionsForFuel(long deviceId, Date from, Date to, boolean sinceLastFill) throws SQLException {
         final QueryBuilder queryBuilder;
         if (sinceLastFill) {
+            QueryBuilder lastFillPosition = QueryBuilder.create(dataSource, getQuery("database.getLastFillPosition"))
+                                                        .setLong("deviceId", deviceId);
+
+            final Collection<Event> result = lastFillPosition.executeQuery(Event.class);
+            if (result.isEmpty()) {
+                return Lists.newArrayList();
+            }
+            final Event fill = result.iterator().next();
             queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForFuelSinceLastFill"))
                                        .setLong("deviceId", deviceId)
-                                       .setDate("from", from)
+                                       .setDate("from", fill.getDeviceTime())
                                        .setDate("to", to)
                                        .setBoolean("sinceLastFill", sinceLastFill);
         }
@@ -427,7 +452,6 @@ public class DataManager {
                                        .setDate("from", from)
                                        .setDate("to", to);
         }
-
 
         Collection<Position> queryResult = queryBuilder.executeQuery(Position.class);
 
@@ -529,20 +553,26 @@ public class DataManager {
 
     public Collection<Event> getEvents(long deviceId, Date from, Date to, boolean sinceLastFill) throws SQLException {
 
-        final QueryBuilder queryBuilder;
-        if (sinceLastFill) {
-            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectEventsSinceLastFill"))
-                                       .setLong("deviceId", deviceId)
-                                       .setDate("from", from)
-                                       .setDate("to", to);
-        }
-        else {
-            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectEvents"))
-                                       .setLong("deviceId", deviceId)
-                                       .setDate("from", from)
-                                       .setDate("to", to);
-        }
 
+        if (sinceLastFill) {
+            QueryBuilder lastFillPosition = QueryBuilder.create(dataSource, getQuery("database.getLastFillPosition"))
+                                                .setLong("deviceId", deviceId);
+
+            final Collection<Event> result = lastFillPosition.executeQuery(Event.class);
+            if (result.isEmpty()) {
+                return Lists.newArrayList();
+            }
+            final Event fill = result.iterator().next();
+            final QueryBuilder queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectEventsSinceLastFill"))
+                                       .setLong("deviceId", deviceId)
+                                       .setDate("from", fill.getDeviceTime())
+                                       .setDate("to", to);
+            return queryBuilder.executeQuery(Event.class);
+        }
+        final QueryBuilder queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectEvents"))
+                                   .setLong("deviceId", deviceId)
+                                   .setDate("from", from)
+                                   .setDate("to", to);
         return queryBuilder.executeQuery(Event.class);
     }
 
