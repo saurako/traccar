@@ -207,6 +207,7 @@
         FROM events
         WHERE deviceid = :deviceId
         AND type = 'fuelFill'
+        AND JSON_EXTRACT(attributes, "$.volume") > 20
         order by id desc
         limit 1
     </entry>
@@ -343,6 +344,7 @@
             limit 1
         )
         AND devicetime BETWEEN :from AND :to ORDER BY devicetime
+        AND JSON_EXTRACT(attributes, "$.volume") > 20
     </entry>
 
     <entry key='database.selectGeofencesAll'>
