@@ -224,8 +224,9 @@
             order by id desc
             limit 1
         )
-        AND devicetime BETWEEN :from AND :to ORDER BY devicetime
+        AND devicetime BETWEEN :from AND :to
         AND JSON_EXTRACT(attributes, "$.volume") > 20
+        ORDER BY devicetime
     </entry>
 
     <entry key='database.deletePositions'>
