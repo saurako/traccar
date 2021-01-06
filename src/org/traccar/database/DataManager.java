@@ -372,9 +372,11 @@ public class DataManager {
             if (result.isEmpty()) {
                 return Lists.newArrayList();
             }
-
-            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.positionsForRouteSinceLastFill"))
-                                       .setLong("deviceId", deviceId);
+            final Event fill = result.iterator().next();
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForRoute"))
+                    .setLong("deviceId", deviceId)
+                    .setDate("from", fill.getDeviceTime())
+                    .setDate("to", to);
         }
         else {
             queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForRoute"))
@@ -413,7 +415,7 @@ public class DataManager {
             }
 
             final Event fill = result.iterator().next();
-            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.positionsSinceLastFill"))
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForSummary"))
                                        .setLong("deviceId", deviceId)
                                        .setDate("from", fill.getDeviceTime())
                                        .setDate("to", to)
@@ -440,11 +442,10 @@ public class DataManager {
                 return Lists.newArrayList();
             }
             final Event fill = result.iterator().next();
-            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForFuelSinceLastFill"))
+            queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForFuel"))
                                        .setLong("deviceId", deviceId)
                                        .setDate("from", fill.getDeviceTime())
-                                       .setDate("to", to)
-                                       .setBoolean("sinceLastFill", sinceLastFill);
+                                       .setDate("to", to);
         }
         else {
             queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectPositionsForFuel"))
@@ -558,16 +559,7 @@ public class DataManager {
             QueryBuilder lastFillPosition = QueryBuilder.create(dataSource, getQuery("database.getLastFillPosition"))
                                                 .setLong("deviceId", deviceId);
 
-            final Collection<Event> result = lastFillPosition.executeQuery(Event.class);
-            if (result.isEmpty()) {
-                return Lists.newArrayList();
-            }
-            final Event fill = result.iterator().next();
-            final QueryBuilder queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectEventsSinceLastFill"))
-                                       .setLong("deviceId", deviceId)
-                                       .setDate("from", fill.getDeviceTime())
-                                       .setDate("to", to);
-            return queryBuilder.executeQuery(Event.class);
+            return lastFillPosition.executeQuery(Event.class);
         }
         final QueryBuilder queryBuilder = QueryBuilder.create(dataSource, getQuery("database.selectEvents"))
                                    .setLong("deviceId", deviceId)
