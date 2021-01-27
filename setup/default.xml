@@ -73,6 +73,15 @@
         ORDER BY fixTime
     </entry>
 
+    <entry key='database.selectPositionsForRoute'>
+        SELECT deviceid, fixtime as devicetime, latitude, longitude, speed, course, attributes
+        FROM positions
+        WHERE deviceId = :deviceId
+        AND fixTime BETWEEN :from AND :to
+        AND valid = true
+        ORDER BY fixTime
+    </entry>
+
     <entry key="database.getLastFillPosition">
         SELECT *
         FROM events
